@@ -89,7 +89,7 @@
         <DCC_Optimize>true</DCC_Optimize>
         <DCC_GenerateStackFrames>false</DCC_GenerateStackFrames>
         <DCC_MapFile>3</DCC_MapFile>
-        <Debugger_RunParams>-url https://delphitools.info/</Debugger_RunParams>
+        <Debugger_RunParams>-url https://delphitools.info/ -out snapshot.jpg</Debugger_RunParams>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2)'!=''">
         <DCC_LocalDebugSymbols>false</DCC_LocalDebugSymbols>

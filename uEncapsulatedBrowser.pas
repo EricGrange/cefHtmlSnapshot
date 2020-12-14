@@ -121,7 +121,7 @@ begin
    GlobalCEFApp.OnContextInitialized       := GlobalCEFApp_OnContextInitialized;
    GlobalCEFApp.BrowserSubprocessPath      := 'cefHtmlSnapshot.exe'; // This is the other EXE for the CEF subprocesses. It's on the same directory as this app.
 
-   SetCurrentDir(ExtractFilePath(ParamStr(0)) + 'Chromium87');
+   SetCurrentDir(ExtractFilePath(ParamStr(0)) + cChromiumSubFolder);
    vParameters := parameters;
 
    GlobalCEFApp.StartMainProcess;
@@ -176,17 +176,19 @@ begin
   if (length(FThread.FailedUrl) > 0) then
     FErrorText := FErrorText + ' - ' + FThread.FailedUrl;
 
-  MainAppEvent.SetEvent;
+  if assigned(MainAppEvent) then
+    MainAppEvent.SetEvent;
 end;
 
 procedure TEncapsulatedBrowser.Thread_OnSnapshotAvailable(Sender: TObject);
 begin
   // This code is executed in the TCEFBrowserThread thread context while the main application thread is waiting for MainAppEvent.
 
-  if not FThread.SaveSnapshotToFile(Parameters.OutputFilePath) then
+  if (FThread = nil) or not(FThread.SaveSnapshotToFile(Parameters.OutputFilePath)) then
     FErrorText := 'There was an error copying the snapshot';
 
-  MainAppEvent.SetEvent;
+  if assigned(MainAppEvent) then
+    MainAppEvent.SetEvent;
 end;
 
 initialization
