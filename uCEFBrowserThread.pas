@@ -47,7 +47,8 @@ uses
   {$ELSE}
   Windows, Messages, SysUtils, Classes, Graphics, SyncObjs, Math,
   {$ENDIF}
-  uCEFChromium, uCEFTypes, uCEFInterfaces, uCEFConstants, uCEFBufferPanel, uCEFChromiumCore, uCEFMiscFunctions;
+  uCEFChromium, uCEFTypes, uCEFInterfaces, uCEFConstants, uCEFBufferPanel,
+  uCEFChromiumCore, uCEFMiscFunctions, uCEFSnapshotParameters;
 
 type
   TVirtualBufferPanel = class(TBufferPanel)
@@ -65,6 +66,7 @@ type
       FBrowser               : TChromium;
       FPanel                 : TVirtualBufferPanel;
       FPanelSize             : TSize;
+      FParameters            : TSnapshotParameters;
       FScreenScale           : single;
       FPopUpBitmap           : TBitmap;
       FPopUpRect             : TRect;
@@ -75,9 +77,7 @@ type
       FResizing              : boolean;
       FPendingResize         : boolean;
       FInitialized           : boolean;
-      FDefaultURL            : ustring;
       FSnapshot              : TBitmap;
-      FDelayMs               : integer;
       FOnSnapshotAvailable   : TNotifyEvent;
       FOnError               : TNotifyEvent;
       FErrorCode             : integer;
@@ -115,7 +115,7 @@ type
       procedure Execute; override;
 
     public
-      constructor Create(const aDefaultURL : ustring; aWidth, aHeight : integer; aDelayMs : integer = 500; const aScreenScale : single = 1);
+      constructor Create(const parameters : TSnapshotParameters; const aScreenScale : single = 1);
       destructor  Destroy; override;
       procedure   AfterConstruction; override;
       function    TerminateBrowserThread : boolean;
@@ -154,7 +154,7 @@ end;
 // ********* TCEFBrowserThread *********
 // *************************************
 
-constructor TCEFBrowserThread.Create(const aDefaultURL : ustring; aWidth, aHeight, aDelayMs : integer; const aScreenScale : single);
+constructor TCEFBrowserThread.Create(const parameters : TSnapshotParameters; const aScreenScale : single = 1);
 begin
   inherited Create(True);
 
@@ -162,10 +162,10 @@ begin
   FInitialized           := False;
   FBrowser               := nil;
   FPanel                 := nil;
-  FPanelSize.cx          := aWidth;
-  FPanelSize.cy          := aHeight;
+  FPanelSize.cx          := parameters.Width;
+  FPanelSize.cy          := parameters.Height;
+  FParameters            := parameters;
   FScreenScale           := aScreenScale;
-  FDefaultURL            := aDefaultURL;
   FPopUpBitmap           := nil;
   FPopUpRect             := rect(0, 0, 0, 0);
   FShowPopUp             := False;
@@ -174,7 +174,6 @@ begin
   FResizeCS              := nil;
   FBrowserInfoCS         := nil;
   FSnapshot              := nil;
-  FDelayMs               := aDelayMs;
   FOnSnapshotAvailable   := nil;
   FOnError               := nil;
   FClosing               := False;
@@ -217,7 +216,7 @@ begin
   FPanel.OnResize    := Panel_OnResize;
 
   FBrowser                         := TChromium.Create(nil);
-  FBrowser.DefaultURL              := FDefaultURL;
+  FBrowser.DefaultURL              := FParameters.URL;
   FBrowser.Options.BackgroundColor := CefColorSetARGB($FF, $FF, $FF, $FF);
   FBrowser.OnAfterCreated          := Browser_OnAfterCreated;
   FBrowser.OnPaint                 := Browser_OnPaint;
@@ -303,7 +302,7 @@ function TCEFBrowserThread.SaveSnapshotToFile(const aPath : ustring) : boolean;
 begin
   Result := False;
 
-  if (FBrowserInfoCS = nil) then exit;
+  if (Self = nil) or (FBrowserInfoCS = nil) then Exit;
 
   try
     try
@@ -607,8 +606,7 @@ begin
   if FClosing or Terminated then
     exit;
 
-  if (FDelayMs > 0) then
-    sleep(FDelayMs);
+  Sleep(FParameters.DelayMSec);
 
   TakeSnapshot;
 

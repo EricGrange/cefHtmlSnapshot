@@ -163,7 +163,7 @@ procedure TEncapsulatedBrowser.LoadURL;
 begin
   if (FThread = nil) then
     begin
-      FThread                     := TCEFBrowserThread.Create(Parameters);
+      FThread                     := TCEFBrowserThread.Create(Parameters, 1);
       FThread.OnError             := Thread_OnError;
       FThread.OnSnapshotAvailable := Thread_OnSnapshotAvailable;
       FThread.Start;
