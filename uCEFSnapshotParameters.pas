@@ -11,7 +11,7 @@ const
    cDLLSubfolder = 'Libraries';
 
 type
-   TSnapshotOutputFormat = ( sofUnknown, sofBMP, sofJPG );
+   TSnapshotOutputFormat = ( sofUnknown, sofBMP, sofJPG, sofPDF );
 
    TSnapshotParameters = record
       ErrorText : String;        // if not empty, parsing ended up with errors
@@ -126,6 +126,8 @@ begin
       Result.OutputFormat := sofBMP
    else if (ext = '.jpg') or (ext = '.jpeg') then
       Result.OutputFormat := sofJPG
+   else if ext = '.pdf' then
+      Result.OutputFormat := sofPDF
    else begin
       Result.ErrorText := 'Unsupported output file format "' + Result.OutputFilePath + '"';
       Exit;

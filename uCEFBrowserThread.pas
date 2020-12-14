@@ -105,6 +105,7 @@ type
       procedure Browser_OnBeforeClose(Sender: TObject; const browser: ICefBrowser);
       procedure Browser_OnLoadError(Sender: TObject; const browser: ICefBrowser; const frame: ICefFrame; errorCode: Integer; const errorText, failedUrl: ustring);
       procedure Browser_OnLoadingStateChange(Sender: TObject; const browser: ICefBrowser; isLoading, canGoBack, canGoForward: Boolean);
+      procedure Browser_OnPdfPrintFinished(Sender: TObject; aResultOK : boolean);
 
       procedure DoOnError;
       procedure DoOnSnapshotAvailable;
@@ -235,6 +236,7 @@ begin
   FBrowser.OnBeforeClose           := Browser_OnBeforeClose;
   FBrowser.OnLoadError             := Browser_OnLoadError;
   FBrowser.OnLoadingStateChange    := Browser_OnLoadingStateChange;
+  FBrowser.OnPdfPrintFinished      := Browser_OnPdfPrintFinished;
 end;
 
 function TCEFBrowserThread.GetErrorCode : integer;
@@ -606,6 +608,17 @@ begin
     PostThreadMessage(ThreadID, CEF_WEBPAGE_LOADED_MSG, 0, 0);
 end;
 
+// Browser_OnPdfPrintFinished
+//
+procedure TCEFBrowserThread.Browser_OnPdfPrintFinished(Sender: TObject; aResultOK : boolean);
+begin
+   if assigned(FOnSnapshotAvailable) then
+      if FSyncEvents then
+        Synchronize(DoOnSnapshotAvailable)
+       else
+        DoOnSnapshotAvailable;
+end;
+
 procedure TCEFBrowserThread.Resize;
 begin
   if FClosing or Terminated or not(Initialized) then exit;
@@ -654,18 +667,19 @@ end;
 
 procedure TCEFBrowserThread.WebpagePostProcessing;
 begin
-  if FClosing or Terminated then
-    exit;
+   if FClosing or Terminated then
+      exit;
 
-  Sleep(FParameters.DelayMSec);
+   Sleep(FParameters.DelayMSec);
 
-  if TakeSnapshot and assigned(FOnSnapshotAvailable) then
-    begin
-      if FSyncEvents then
-        Synchronize(DoOnSnapshotAvailable)
-       else
-        DoOnSnapshotAvailable;
-    end;
+   if TakeSnapshot and assigned(FOnSnapshotAvailable) then begin
+      if FParameters.OutputFormat <> sofPDF then begin
+         if FSyncEvents then
+            Synchronize(DoOnSnapshotAvailable)
+         else
+            DoOnSnapshotAvailable;
+      end;
+   end;
 end;
 
 procedure TCEFBrowserThread.WebpageError;
@@ -707,6 +721,8 @@ begin
           FSnapshot.Canvas.Draw(0, 0, FPanel.Buffer);
           Result := True;
         end;
+      if FParameters.OutputFormat = sofPDF then
+         FBrowser.PrintToPDF(FParameters.OutputFilePath, '', '');
     finally
       FBrowserInfoCS.Release;
       FPanel.EndBufferDraw;
