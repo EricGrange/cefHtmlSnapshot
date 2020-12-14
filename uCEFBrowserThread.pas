@@ -721,8 +721,19 @@ begin
           FSnapshot.Canvas.Draw(0, 0, FPanel.Buffer);
           Result := True;
         end;
-      if FParameters.OutputFormat = sofPDF then
-         FBrowser.PrintToPDF(FParameters.OutputFilePath, '', '');
+      if FParameters.OutputFormat = sofPDF then begin
+         FBrowser.PDFPrintOptions.page_width := FParameters.PDFOptions.page_width;
+         FBrowser.PDFPrintOptions.page_height := FParameters.PDFOptions.page_height;
+         FBrowser.PDFPrintOptions.margin_type := FParameters.PDFOptions.margin_type;
+         FBrowser.PDFPrintOptions.margin_top := FParameters.PDFOptions.margin_top;
+         FBrowser.PDFPrintOptions.margin_left := FParameters.PDFOptions.margin_left;
+         FBrowser.PDFPrintOptions.margin_right := FParameters.PDFOptions.margin_right;
+         FBrowser.PDFPrintOptions.margin_bottom := FParameters.PDFOptions.margin_bottom;
+         FBrowser.PDFPrintOptions.landscape := FParameters.PDFOptions.landscape <> 0;
+         FBrowser.PDFPrintOptions.header_footer_enabled := (FParameters.PDFTitle <> '') or (FParameters.PDFURL <> '');
+         FBrowser.PDFPrintOptions.backgrounds_enabled := FParameters.PDFOptions.backgrounds_enabled <> 0;
+         FBrowser.PrintToPDF(FParameters.OutputFilePath, FParameters.PDFTitle, FParameters.PDFURL);
+      end;
     finally
       FBrowserInfoCS.Release;
       FPanel.EndBufferDraw;

@@ -89,7 +89,9 @@
         <DCC_Optimize>true</DCC_Optimize>
         <DCC_GenerateStackFrames>false</DCC_GenerateStackFrames>
         <DCC_MapFile>3</DCC_MapFile>
-        <Debugger_RunParams>-url https://delphitools.info/ -out snapshot.jpg</Debugger_RunParams>
+        <Debugger_RunParams>-url https://delphitools.info/ -out snapshot.pdf -pdf-page-width 210000 -pdf-page-height 210000</Debugger_RunParams>
+        <DCC_DebugInfoInTds>true</DCC_DebugInfoInTds>
+        <Icon_MainIcon>cefHtmlSnapshot_Icon.ico</Icon_MainIcon>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2)'!=''">
         <DCC_LocalDebugSymbols>false</DCC_LocalDebugSymbols>

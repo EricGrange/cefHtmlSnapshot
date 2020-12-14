@@ -3,7 +3,7 @@ unit uCEFSnapshotParameters;
 interface
 
 uses
-   Classes, SysUtils, Graphics,
+   System.Classes, System.SysUtils, Vcl.Graphics,
    uCEFTypes, uCEFMiscFunctions;
 
 const
@@ -11,7 +11,7 @@ const
    cDLLSubfolder = 'Libraries';
 
 type
-   TSnapshotOutputFormat = ( sofUnknown, sofBMP, sofJPG, sofPDF );
+   TSnapshotOutputFormat = ( sofUnknown, sofBMP, sofJPG, sofPNG, sofPDF );
 
    TSnapshotParameters = record
       ErrorText : String;        // if not empty, parsing ended up with errors
@@ -23,6 +23,9 @@ type
       OutputFilePath : String;
       OutputFormat : TSnapshotOutputFormat;
       JPEGQuality : Integer;
+      PNGCompressionLevel : Integer;
+      PDFOptions : TCefPdfPrintSettings;
+      PDFTitle, PDFURL : String;
 
       procedure SaveBitmap(bmp : TBitmap);
    end;
@@ -37,18 +40,32 @@ implementation
 // ------------------------------------------------------------------
 // ------------------------------------------------------------------
 
-uses LibTurboJPEG;
+uses LibTurboJPEG, Vcl.Imaging.pngimage;
 
 const
    cHelp = 'cefHtmlSnapshot [-arg1 value1] [-arg2 value2] ...'#10#10
          + '  -?, -h, -help    This inline documentation'#10
          + '  -url             URL of the website or file to be snapshotted (required)'#10
-         + '  -width, -w       Width of the snapshot, between 1 and 2048 (default 1024)'#10
-         + '  -height, -h      Height of the snapshot, between 1 and 2048 (default 768)'#10
-         + '  -scale, -s       Scale of the website relative to 96dpi, between 0.1 and 10.0 (default 1.0)'#10
          + '  -delay, -d       Delay in milliseconds, between 100 ms and 30 sec (default 1 sec)'#10
          + '  -out             Output file pathname, extension determines format (default snapshot.bmp)'#10
-         + '  -quality         Output JPEG quality when output is JPEG (1 to 100, default 90)'#10
+         + '                   Supported formats: JPEG, PNG, BMP and PDF'#10
+         + #10
+         + '  -width, -w       Width of the snapshot, between 1 and 2048 (default 1024)'#10
+         + '  -height, -h      Height of the snapshot, between 1 and 2048 (default 768)'#10
+         + '                   When output format is a PDF, this parameter is ignored'#10
+         + '  -scale, -s       Scale of the website relative to 96dpi, between 0.1 and 10.0 (default 1.0)'#10
+         + '  -quality         Output JPEG quality (1 to 100, default 90)'#10
+         + '  -compression     Output PNG compresson level (0 to 9, default 7)'#10
+         + #10
+         + '  -pdf-xxx         PDF output options outlined below'#10
+         + '       page-width      page width in microns (default 210000)'#10
+         + '       page-height     page height in microns (default 297000)'#10
+         + '       margin-top      top margin in points (default 20)'#10
+         + '       margin-left     left margin in points (default 20)'#10
+         + '       margin-right    right margin in points (default 20)'#10
+         + '       margin-bottom   bottom margin in points (default 20)'#10
+         + '       landscape       portait (default, 0) or landscape (1)'#10
+         + '       backgrounds     enable backgrounds (1) or not (default, 0)'#10
          ;
 
 // ParseCommandLineParameters
@@ -84,6 +101,17 @@ begin
    Result.DelayMSec := 1000;
    Result.OutputFilePath := 'snapshot.bmp';
    Result.JPEGQuality := 90;
+   Result.PNGCompressionLevel := 7;
+
+   Result.PDFOptions.page_width := 210000;
+   Result.PDFOptions.page_height := 297000;
+   Result.PDFOptions.margin_type := PDF_PRINT_MARGIN_CUSTOM;
+   Result.PDFOptions.margin_top := 20;
+   Result.PDFOptions.margin_left := 20;
+   Result.PDFOptions.margin_right := 20;
+   Result.PDFOptions.margin_bottom := 20;
+   Result.PDFOptions.landscape := 0;
+   Result.PDFOptions.backgrounds_enabled := 0;
 
    var lastP := '';
    for var i := 1 to ParamCount do begin
@@ -111,6 +139,33 @@ begin
             Result.OutputFilePath := p;
          end else if lastP = 'quality' then begin
             Result.ErrorText := TryParseIntegerParameter('Quality', p, Result.JPEGQuality, 1, 100);
+         end else if lastP = 'compression' then begin
+            Result.ErrorText := TryParseIntegerParameter('Compression', p, Result.PNGCompressionLevel, 0, 9);
+         end else if lastP = 'pdf-page-width' then begin
+            Result.ErrorText := TryParseIntegerParameter('PDF-page-width', p, Result.PDFOptions.page_width, 10000, 10000000);
+         end else if lastP = 'pdf-page-height' then begin
+            Result.ErrorText := TryParseIntegerParameter('PDF-page-height', p, Result.PDFOptions.page_height, 10000, 10000000);
+         end else if lastP = 'pdf-margin-top' then begin
+            Result.ErrorText := TryParseIntegerParameter('PDF-margin-top', p, Result.PDFOptions.margin_top, 0, 10000);
+         end else if lastP = 'pdf-margin-left' then begin
+            Result.ErrorText := TryParseIntegerParameter('PDF-margin-left', p, Result.PDFOptions.margin_left, 0, 10000);
+         end else if lastP = 'pdf-margin-right' then begin
+            Result.ErrorText := TryParseIntegerParameter('PDF-margin-right', p, Result.PDFOptions.margin_right, 0, 10000);
+         end else if lastP = 'pdf-margin-bottom' then begin
+            Result.ErrorText := TryParseIntegerParameter('PDF-margin-bottom', p, Result.PDFOptions.margin_bottom, 0, 10000);
+         end else if lastP = 'pdf-landscape' then begin
+            Result.ErrorText := TryParseIntegerParameter('PDF-landscape', p, Result.PDFOptions.landscape, 0, 1);
+         end else if lastP = 'pdf-title' then begin
+            Result.PDFTitle := p;
+         end else if lastP = 'pdf-url' then begin
+            Result.PDFURL := p;
+         end else if lastP = 'pdf-backgrounds' then begin
+            Result.ErrorText := TryParseIntegerParameter('PDF-backgrounds', p, Result.PDFOptions.backgrounds_enabled, 0, 1);
+//      property scale_factor          : integer                 read Fscale_factor             write Fscale_factor          default 0;
+//      property header_footer_enabled : boolean                 read Fheader_footer_enabled    write Fheader_footer_enabled default False;
+//      property selection_only        : boolean                 read Fselection_only           write Fselection_only        default False;
+//      property landscape             : boolean                 read Flandscape                write Flandscape             default False;
+//      property backgrounds_enabled   : boolean                 read Fbackgrounds_enabled      write Fbackgrounds_enabled   default False;
          end else begin
             Result.ErrorText := 'Unsupported parameter "' + p + '"';
          end;
@@ -126,6 +181,8 @@ begin
       Result.OutputFormat := sofBMP
    else if (ext = '.jpg') or (ext = '.jpeg') then
       Result.OutputFormat := sofJPG
+   else if ext = '.png' then
+      Result.OutputFormat := sofPNG
    else if ext = '.pdf' then
       Result.OutputFormat := sofPDF
    else begin
@@ -186,6 +243,18 @@ begin
    end;
 end;
 
+procedure SaveBitmapToPNG(bmp : TBitmap; const fileName : String; compressionLevel : Integer);
+begin
+   var png := TPNGImage.Create;
+   try
+      png.CompressionLevel := compressionLevel;
+      png.Assign(bmp);
+      png.SaveToFile(fileName);
+   finally
+      png.Free;
+   end;
+end;
+
 // SaveBitmap
 //
 procedure TSnapshotParameters.SaveBitmap(bmp : TBitmap);
@@ -193,6 +262,7 @@ begin
    case OutputFormat of
       sofBMP : bmp.SaveToFile(OutputFilePath);
       sofJPG : SaveBitmapToJPEG(bmp, OutputFilePath, JPEGQuality);
+      sofPNG : SaveBitmapToPNG(bmp, OutputFilePath, PNGCompressionLevel);
    end;
 end;
 
