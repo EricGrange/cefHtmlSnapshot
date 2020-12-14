@@ -48,10 +48,11 @@ uses
   System.SysUtils,
   {$ELSE}
   SysUtils,
-  {$ENDIF}
+  {$ENDIF }
   uCEFApplication,
   uEncapsulatedBrowser in 'uEncapsulatedBrowser.pas',
-  uCEFBrowserThread in 'uCEFBrowserThread.pas';
+  uCEFBrowserThread in 'uCEFBrowserThread.pas',
+  uCEFSnapshotParameters in 'uCEFSnapshotParameters.pas';
 
 {$IFDEF WIN32}
   // CEF3 needs to set the LARGEADDRESSAWARE ($20) flag which allows 32-bit processes to use up to 3GB of RAM.
@@ -98,17 +99,25 @@ uses
 // them in CreateGlobalCEFApp then you'll also have to copy those property values in ConsoleBrowser2_sp.dpr
 // See the "SubProcess" demo for more details.
 
+var
+   parameters : TSnapshotParameters;
 begin
-  try
-    try
-      CreateGlobalCEFApp;
-      if WaitForMainAppEvent then
-        WriteResult;
-    except
-      on E: Exception do
-        Writeln(E.ClassName, ': ', E.Message);
-    end;
-  finally
-    DestroyGlobalCEFApp;
-  end;
+   parameters := ParseCommandLineParameters;
+   if parameters.ErrorText <> '' then begin
+      Writeln(parameters.ErrorText);
+      ExitCode := -1;
+      Exit;
+   end;
+   try
+      try
+         CreateGlobalCEFApp(parameters);
+         if WaitForMainAppEvent then
+            WriteResult;
+      except
+         on E: Exception do
+            Writeln(E.ClassName, ': ', E.Message);
+      end;
+   finally
+      DestroyGlobalCEFApp;
+   end;
 end.

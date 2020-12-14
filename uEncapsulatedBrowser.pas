@@ -47,36 +47,34 @@ uses
   {$ELSE}
   SyncObjs, SysUtils,
   {$ENDIF}
-  uCEFTypes, uCEFBrowserThread;
+  uCEFTypes, uCEFBrowserThread, uCEFSnapshotParameters;
 
 type
   TEncapsulatedBrowser = class
     protected
       FThread       : TCEFBrowserThread;
-      FWidth        : integer;
-      FHeight       : integer;
       FDelayMs      : integer;
       FScale        : single;
       FSnapshotPath : ustring;
       FErrorText    : ustring;
+      FParameters   : TSnapshotParameters;
 
       procedure Thread_OnError(Sender: TObject);
       procedure Thread_OnSnapshotAvailable(Sender: TObject);
 
     public
-      constructor Create;
+      constructor Create(const aParameters : TSnapshotParameters);
       destructor  Destroy; override;
-      procedure   LoadURL(const aURL : string);
+      procedure   LoadURL;
 
-      property Width           : integer    read FWidth          write FWidth;
-      property Height          : integer    read FHeight         write FHeight;
+      property Parameters      : TSnapshotParameters read FParameters;
       property DelayMs         : integer    read FDelayMs        write FDelayMs;
       property Scale           : single     read FScale          write FScale;
       property SnapshotPath    : ustring    read FSnapshotPath   write FSnapshotPath;
       property ErrorText       : ustring    read FErrorText;
   end;
 
-procedure CreateGlobalCEFApp;
+procedure CreateGlobalCEFApp(const parameters : TSnapshotParameters);
 function  WaitForMainAppEvent : boolean;
 procedure WriteResult;
 
@@ -88,34 +86,12 @@ uses
 var
   MainAppEvent        : TEvent;
   EncapsulatedBrowser : TEncapsulatedBrowser = nil;
+  vParameters : TSnapshotParameters;
 
 procedure GlobalCEFApp_OnContextInitialized;
-var
-  TempParam, TempURL : ustring;
 begin
-  TempURL := '';
-
-  // This demo reads the "/url" parameter to load it as the default URL in the browser.
-  // For example : ConsoleBrowser2.exe /url=https://www.briskbard.com
-  if (ParamCount > 0) then
-    begin
-      TempParam := paramstr(1);
-
-      if (Copy(TempParam, 1, 5) = '/url=') then
-        begin
-          TempURL := trim(Copy(TempParam, 6, length(TempParam)));
-          if (length(TempURL) > 0) then WriteLn('Loading ' + TempURL);
-        end;
-    end;
-
-  if (length(TempURL) = 0) then
-    begin
-      TempURL := 'https://www.google.com';
-      WriteLn('No URL has been specified. Using the default...');
-    end;
-
-  EncapsulatedBrowser := TEncapsulatedBrowser.Create;
-  EncapsulatedBrowser.LoadURL(TempURL);
+  EncapsulatedBrowser := TEncapsulatedBrowser.Create(vParameters);
+  EncapsulatedBrowser.LoadURL;
 end;
 
 function WaitForMainAppEvent : boolean;
@@ -141,25 +117,29 @@ begin
       WriteLn('Snapshot saved successfully as ' + EncapsulatedBrowser.SnapshotPath);
 end;
 
-procedure CreateGlobalCEFApp;
+procedure CreateGlobalCEFApp(const parameters : TSnapshotParameters);
 begin
-  GlobalCEFApp                            := TCefApplication.Create;
-  GlobalCEFApp.WindowlessRenderingEnabled := True;
-  GlobalCEFApp.EnableHighDPISupport       := True;
-  GlobalCEFApp.ShowMessageDlg             := False;                    // This demo shouldn't show any window, just console messages.
-  GlobalCEFApp.BrowserSubprocessPath      := 'cefHtmlSnapshot_sp.exe'; // This is the other EXE for the CEF subprocesses. It's on the same directory as this app.
-  GlobalCEFApp.BlinkSettings              := 'hideScrollbars';         // This setting removes all scrollbars to capture a cleaner snapshot
-  GlobalCEFApp.OnContextInitialized       := GlobalCEFApp_OnContextInitialized;
-  GlobalCEFApp.StartMainProcess;
+   GlobalCEFApp                            := TCefApplication.Create;
+   GlobalCEFApp.WindowlessRenderingEnabled := True;
+   GlobalCEFApp.EnableHighDPISupport       := True;
+   GlobalCEFApp.ShowMessageDlg             := False;                    // This demo shouldn't show any window, just console messages.
+   GlobalCEFApp.BlinkSettings              := 'hideScrollbars';         // This setting removes all scrollbars to capture a cleaner snapshot
+   GlobalCEFApp.OnContextInitialized       := GlobalCEFApp_OnContextInitialized;
+
+   var basePath := ExtractFilePath(ParamStr(0)) + 'Chromium87';
+   SetCurrentDir(basePath);
+   GlobalCEFApp.BrowserSubprocessPath      := 'cefHtmlSnapshot_sp.exe'; // This is the other EXE for the CEF subprocesses. It's on the same directory as this app.
+   vParameters := parameters;
+
+   GlobalCEFApp.StartMainProcess;
 end;
 
-constructor TEncapsulatedBrowser.Create;
+constructor TEncapsulatedBrowser.Create(const aParameters : TSnapshotParameters);
 begin
   inherited Create;
 
   FThread        := nil;
-  FWidth         := 1024;
-  FHeight        := 768;
+  FParameters    := aParameters;
   FDelayMs       := 500;
   FScale         := 1;    // This is the relative scale to a 96 DPI screen. It's calculated with the formula : scale = custom_DPI / 96
   FSnapshotPath  := 'snapshot.bmp';
@@ -179,17 +159,17 @@ begin
   inherited Destroy;
 end;
 
-procedure TEncapsulatedBrowser.LoadURL(const aURL : string);
+procedure TEncapsulatedBrowser.LoadURL;
 begin
   if (FThread = nil) then
     begin
-      FThread                     := TCEFBrowserThread.Create(aURL, FWidth, FHeight, FDelayMs, FScale);
+      FThread                     := TCEFBrowserThread.Create(Parameters);
       FThread.OnError             := Thread_OnError;
       FThread.OnSnapshotAvailable := Thread_OnSnapshotAvailable;
       FThread.Start;
     end
    else
-    FThread.LoadUrl(aURL);
+    FThread.LoadUrl(Parameters.URL);
 end;
 
 procedure TEncapsulatedBrowser.Thread_OnError(Sender: TObject);
