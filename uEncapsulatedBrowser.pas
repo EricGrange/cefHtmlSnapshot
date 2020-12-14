@@ -53,7 +53,6 @@ type
   TEncapsulatedBrowser = class
     protected
       FThread       : TCEFBrowserThread;
-      FDelayMs      : integer;
       FErrorText    : ustring;
       FParameters   : TSnapshotParameters;
 
@@ -66,7 +65,6 @@ type
       procedure   LoadURL;
 
       property Parameters      : TSnapshotParameters read FParameters;
-      property DelayMs         : integer    read FDelayMs        write FDelayMs;
       property ErrorText       : ustring    read FErrorText;
   end;
 
@@ -121,7 +119,7 @@ begin
    GlobalCEFApp.ShowMessageDlg             := False;                    // This demo shouldn't show any window, just console messages.
    GlobalCEFApp.BlinkSettings              := 'hideScrollbars';         // This setting removes all scrollbars to capture a cleaner snapshot
    GlobalCEFApp.OnContextInitialized       := GlobalCEFApp_OnContextInitialized;
-   GlobalCEFApp.BrowserSubprocessPath      := 'cefHtmlSnapshot_sp.exe'; // This is the other EXE for the CEF subprocesses. It's on the same directory as this app.
+   GlobalCEFApp.BrowserSubprocessPath      := 'cefHtmlSnapshot.exe'; // This is the other EXE for the CEF subprocesses. It's on the same directory as this app.
 
    SetCurrentDir(ExtractFilePath(ParamStr(0)) + 'Chromium87');
    vParameters := parameters;
@@ -135,7 +133,6 @@ begin
 
   FThread        := nil;
   FParameters    := aParameters;
-  FDelayMs       := 500;
   FErrorText     := '';
 end;
 

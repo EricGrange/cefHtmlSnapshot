@@ -41,6 +41,11 @@ program cefHtmlSnapshot;
 
 {$APPTYPE CONSOLE}
 
+{$IFDEF WIN32}
+  // CEF3 needs to set the LARGEADDRESSAWARE ($20) flag which allows 32-bit processes to use up to 3GB of RAM.
+  {$SetPEFlags $20}
+{$ENDIF}
+
 {$R *.res}
 
 uses
@@ -99,9 +104,25 @@ uses
 // them in CreateGlobalCEFApp then you'll also have to copy those property values in ConsoleBrowser2_sp.dpr
 // See the "SubProcess" demo for more details.
 
+procedure RunAsSubProcess;
+begin
+  GlobalCEFApp                            := TCefApplicationCore.Create;
+  GlobalCEFApp.WindowlessRenderingEnabled := True;
+  GlobalCEFApp.EnableHighDPISupport       := True;
+  GlobalCEFApp.ShowMessageDlg             := False;
+  GlobalCEFApp.BlinkSettings              := 'hideScrollbars';
+  GlobalCEFApp.StartSubProcess;
+  DestroyGlobalCEFApp;
+end;
+
 var
    parameters : TSnapshotParameters;
 begin
+   if (ParamCount > 0) and (Copy(ParamStr(1), 1, 2) = '--') then begin
+      RunAsSubProcess;
+      Exit;
+   end;
+
    parameters := ParseCommandLineParameters;
    if parameters.ErrorText <> '' then begin
       Writeln(parameters.ErrorText);

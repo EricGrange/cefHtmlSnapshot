@@ -99,7 +99,7 @@ begin
    end;
 
    if CustomPathIsRelative(Result.OutputFilePath) then
-      Result.OutputFilePath := IncludeTrailingPathDelimiter(GetCurrentDir) + p;
+      Result.OutputFilePath := IncludeTrailingPathDelimiter(GetCurrentDir) + Result.OutputFilePath;
    var ext := LowerCase(ExtractFileExt(Result.OutputFilePath));
    if ext = '.bmp' then
       Result.OutputFormat := sofBMP
