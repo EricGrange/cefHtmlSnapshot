@@ -1,0 +1,48 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{B3B59DC2-AFE8-41F8-81CF-6F7882A9E196}</ProjectGuid>
+    </PropertyGroup>
+    <ItemGroup>
+        <Projects Include="cefHtmlSnapshot.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="cefHtmlSnapshot_sp.dproj">
+            <Dependencies/>
+        </Projects>
+    </ItemGroup>
+    <ProjectExtensions>
+        <Borland.Personality>Default.Personality.12</Borland.Personality>
+        <Borland.ProjectType/>
+        <BorlandProject>
+            <Default.Personality/>
+        </BorlandProject>
+    </ProjectExtensions>
+    <Target Name="cefHtmlSnapshot">
+        <MSBuild Projects="cefHtmlSnapshot.dproj"/>
+    </Target>
+    <Target Name="cefHtmlSnapshot:Clean">
+        <MSBuild Projects="cefHtmlSnapshot.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="cefHtmlSnapshot:Make">
+        <MSBuild Projects="cefHtmlSnapshot.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="cefHtmlSnapshot_sp">
+        <MSBuild Projects="cefHtmlSnapshot_sp.dproj"/>
+    </Target>
+    <Target Name="cefHtmlSnapshot_sp:Clean">
+        <MSBuild Projects="cefHtmlSnapshot_sp.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="cefHtmlSnapshot_sp:Make">
+        <MSBuild Projects="cefHtmlSnapshot_sp.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="Build">
+        <CallTarget Targets="cefHtmlSnapshot;cefHtmlSnapshot_sp"/>
+    </Target>
+    <Target Name="Clean">
+        <CallTarget Targets="cefHtmlSnapshot:Clean;cefHtmlSnapshot_sp:Clean"/>
+    </Target>
+    <Target Name="Make">
+        <CallTarget Targets="cefHtmlSnapshot:Make;cefHtmlSnapshot_sp:Make"/>
+    </Target>
+    <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
+</Project>
