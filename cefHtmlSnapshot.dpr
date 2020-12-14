@@ -49,7 +49,7 @@ uses
   {$ELSE}
   SysUtils,
   {$ENDIF }
-  uCEFApplication,
+  uCEFApplication, uCEFApplicationCore,
   uEncapsulatedBrowser in 'uEncapsulatedBrowser.pas',
   uCEFBrowserThread in 'uCEFBrowserThread.pas',
   uCEFSnapshotParameters in 'uCEFSnapshotParameters.pas';

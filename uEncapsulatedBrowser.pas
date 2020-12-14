@@ -54,8 +54,6 @@ type
     protected
       FThread       : TCEFBrowserThread;
       FDelayMs      : integer;
-      FScale        : single;
-      FSnapshotPath : ustring;
       FErrorText    : ustring;
       FParameters   : TSnapshotParameters;
 
@@ -69,8 +67,6 @@ type
 
       property Parameters      : TSnapshotParameters read FParameters;
       property DelayMs         : integer    read FDelayMs        write FDelayMs;
-      property Scale           : single     read FScale          write FScale;
-      property SnapshotPath    : ustring    read FSnapshotPath   write FSnapshotPath;
       property ErrorText       : ustring    read FErrorText;
   end;
 
@@ -114,7 +110,7 @@ begin
     if (length(EncapsulatedBrowser.ErrorText) > 0) then
       WriteLn(EncapsulatedBrowser.ErrorText)
      else
-      WriteLn('Snapshot saved successfully as ' + EncapsulatedBrowser.SnapshotPath);
+      WriteLn('Snapshot saved successfully as ' + EncapsulatedBrowser.Parameters.OutputFilePath);
 end;
 
 procedure CreateGlobalCEFApp(const parameters : TSnapshotParameters);
@@ -125,10 +121,9 @@ begin
    GlobalCEFApp.ShowMessageDlg             := False;                    // This demo shouldn't show any window, just console messages.
    GlobalCEFApp.BlinkSettings              := 'hideScrollbars';         // This setting removes all scrollbars to capture a cleaner snapshot
    GlobalCEFApp.OnContextInitialized       := GlobalCEFApp_OnContextInitialized;
-
-   var basePath := ExtractFilePath(ParamStr(0)) + 'Chromium87';
-   SetCurrentDir(basePath);
    GlobalCEFApp.BrowserSubprocessPath      := 'cefHtmlSnapshot_sp.exe'; // This is the other EXE for the CEF subprocesses. It's on the same directory as this app.
+
+   SetCurrentDir(ExtractFilePath(ParamStr(0)) + 'Chromium87');
    vParameters := parameters;
 
    GlobalCEFApp.StartMainProcess;
@@ -141,8 +136,6 @@ begin
   FThread        := nil;
   FParameters    := aParameters;
   FDelayMs       := 500;
-  FScale         := 1;    // This is the relative scale to a 96 DPI screen. It's calculated with the formula : scale = custom_DPI / 96
-  FSnapshotPath  := 'snapshot.bmp';
   FErrorText     := '';
 end;
 
@@ -163,7 +156,7 @@ procedure TEncapsulatedBrowser.LoadURL;
 begin
   if (FThread = nil) then
     begin
-      FThread                     := TCEFBrowserThread.Create(Parameters, 1);
+      FThread                     := TCEFBrowserThread.Create(Parameters);
       FThread.OnError             := Thread_OnError;
       FThread.OnSnapshotAvailable := Thread_OnSnapshotAvailable;
       FThread.Start;
@@ -193,7 +186,7 @@ procedure TEncapsulatedBrowser.Thread_OnSnapshotAvailable(Sender: TObject);
 begin
   // This code is executed in the TCEFBrowserThread thread context while the main application thread is waiting for MainAppEvent.
 
-  if not(FThread.SaveSnapshotToFile(FSnapshotPath)) then
+  if not FThread.SaveSnapshotToFile(Parameters.OutputFilePath) then
     FErrorText := 'There was an error copying the snapshot';
 
   MainAppEvent.SetEvent;

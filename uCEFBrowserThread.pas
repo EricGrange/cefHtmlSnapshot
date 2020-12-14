@@ -67,7 +67,6 @@ type
       FPanel                 : TVirtualBufferPanel;
       FPanelSize             : TSize;
       FParameters            : TSnapshotParameters;
-      FScreenScale           : single;
       FPopUpBitmap           : TBitmap;
       FPopUpRect             : TRect;
       FResizeCS              : TCriticalSection;
@@ -115,7 +114,7 @@ type
       procedure Execute; override;
 
     public
-      constructor Create(const parameters : TSnapshotParameters; const aScreenScale : single = 1);
+      constructor Create(const parameters : TSnapshotParameters);
       destructor  Destroy; override;
       procedure   AfterConstruction; override;
       function    TerminateBrowserThread : boolean;
@@ -154,7 +153,7 @@ end;
 // ********* TCEFBrowserThread *********
 // *************************************
 
-constructor TCEFBrowserThread.Create(const parameters : TSnapshotParameters; const aScreenScale : single = 1);
+constructor TCEFBrowserThread.Create(const parameters : TSnapshotParameters);
 begin
   inherited Create(True);
 
@@ -165,7 +164,6 @@ begin
   FPanelSize.cx          := parameters.Width;
   FPanelSize.cy          := parameters.Height;
   FParameters            := parameters;
-  FScreenScale           := aScreenScale;
   FPopUpBitmap           := nil;
   FPopUpRect             := rect(0, 0, 0, 0);
   FShowPopUp             := False;
@@ -210,7 +208,7 @@ begin
   FBrowserInfoCS := TCriticalSection.Create;
 
   FPanel             := TVirtualBufferPanel.Create(nil);
-  FPanel.CustomScale := FScreenScale;
+  FPanel.CustomScale := FParameters.Scale;
   FPanel.Width       := FPanelSize.cx;
   FPanel.Height      := FPanelSize.cy;
   FPanel.OnResize    := Panel_OnResize;
@@ -469,14 +467,14 @@ procedure TCEFBrowserThread.Browser_OnGetViewRect(Sender: TObject; const browser
 begin
   rect.x      := 0;
   rect.y      := 0;
-  rect.width  := DeviceToLogical(FPanel.Width,  FScreenScale);
-  rect.height := DeviceToLogical(FPanel.Height, FScreenScale);
+  rect.width  := DeviceToLogical(FPanel.Width,  FParameters.Scale);
+  rect.height := DeviceToLogical(FPanel.Height, FParameters.Scale);
 end;
 
 procedure TCEFBrowserThread.Browser_OnGetScreenPoint(Sender: TObject; const browser: ICefBrowser; viewX, viewY: Integer; var screenX, screenY: Integer; out Result: Boolean);
 begin
-  screenX := LogicalToDevice(viewX, FScreenScale);
-  screenY := LogicalToDevice(viewY, FScreenScale);
+  screenX := LogicalToDevice(viewX, FParameters.Scale);
+  screenY := LogicalToDevice(viewY, FParameters.Scale);
   Result  := True;
 end;
 
@@ -486,10 +484,10 @@ var
 begin
   TempRect.x      := 0;
   TempRect.y      := 0;
-  TempRect.width  := DeviceToLogical(FPanel.Width,  FScreenScale);
-  TempRect.height := DeviceToLogical(FPanel.Height, FScreenScale);
+  TempRect.width  := DeviceToLogical(FPanel.Width,  FParameters.Scale);
+  TempRect.height := DeviceToLogical(FPanel.Height, FParameters.Scale);
 
-  screenInfo.device_scale_factor := FScreenScale;
+  screenInfo.device_scale_factor := FParameters.Scale;
   screenInfo.depth               := 0;
   screenInfo.depth_per_component := 0;
   screenInfo.is_monochrome       := Ord(False);
@@ -514,7 +512,7 @@ end;
 
 procedure TCEFBrowserThread.Browser_OnPopupSize(Sender: TObject; const browser: ICefBrowser; const rect: PCefRect);
 begin
-  LogicalToDevice(rect^, FScreenScale);
+  LogicalToDevice(rect^, FParameters.Scale);
 
   FPopUpRect.Left   := rect.x;
   FPopUpRect.Top    := rect.y;
