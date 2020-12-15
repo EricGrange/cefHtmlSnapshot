@@ -15,7 +15,7 @@ type
 
    TSnapshotParameters = record
       ErrorText : String;        // if not empty, parsing ended up with errors
-      URL : ustring;
+      URL : String;
       Width : Integer;
       Height : Integer;
       Scale : Double;
@@ -62,9 +62,8 @@ const
          + '  -quality         Output JPEG quality (1 to 100, default 90)'#10
          + '  -compression     Output PNG compresson level (0 to 9, default 7)'#10
          + #10
-         + '  -cookie          set a cookie, format is CommaText, starting with name, then fields'#10
+         + '  -cookie          set a cookie, format is CommaText, starting with name=value, then fields'#10
          + '                   url= cookie url (uses scheme + domain from url parameter by default)'#10
-         + '                   value= value of the cookie'#10
          + '  -javascript      Name of a JavaScript file to execute just before taking the snapshot'#10
          + #10
          + '  -pdf-xxx         PDF output options outlined below'#10

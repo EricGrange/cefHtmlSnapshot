@@ -144,6 +144,8 @@ type
 
 implementation
 
+uses StrUtils;
+
 const
   CEF_WEBPAGE_LOADED_MSG   = WM_APP + 1;
   CEF_WEBPAGE_ERROR_MSG    = WM_APP + 2;
@@ -401,6 +403,8 @@ begin
     try
       FBrowserInfoCS.Acquire;
       FInitialized := True;
+
+      SetCookies;
     finally
       FBrowserInfoCS.Release;
     end;
@@ -666,10 +670,13 @@ begin
          fields.CommaText := rawCookie;
          var url := fields.Values['url'];
          if url = '' then url := urlBase;
+         var p := Pos('//', url);
+         var domain := Copy(url, p+2, Pos('/', url, p+2)-p-2);
+
          FBrowser.SetCookie(
-            url, fields[0], fields.Values['value'],
-            '', '', //domain, path: ustring;
-            True, True, False, //                           secure, httponly, hasExpires: Boolean;
+            url, fields.Names[0], fields.ValueFromIndex[0],
+            domain, '/', //domain, path: ustring;
+            url.StartsWith('https:'), False, False, //                           secure, httponly, hasExpires: Boolean;
             Now, Now, Now+1, //                     const creation, lastAccess, expires: TDateTime;
             CEF_COOKIE_SAME_SITE_UNSPECIFIED, //                           same_site : TCefCookieSameSite;
             CEF_COOKIE_PRIORITY_MEDIUM, //                           priority : TCefCookiePriority;
@@ -689,8 +696,6 @@ begin
   if assigned(FBrowserInfoCS) then
     try
       FBrowserInfoCS.Acquire;
-
-      SetCookies;
 
       if (length(FPendingURL) > 0) then
         begin
