@@ -137,9 +137,12 @@ begin
    GlobalCEFApp.FlashEnabled := False;
    GlobalCEFApp.MuteAudio := True;
    GlobalCEFApp.AllowFileAccessFromFiles := True;
+   GlobalCEFApp.EnableMediaStream := False;
 
    GlobalCEFApp.DeleteCache := True;
    GlobalCEFApp.DeleteCookies := True;
+   GlobalCEFApp.PersistSessionCookies := False;
+   GlobalCEFApp.PersistUserPreferences := False;
 
    GlobalCEFApp.StartMainProcess;
 end;

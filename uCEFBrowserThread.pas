@@ -118,6 +118,7 @@ type
       procedure WebpagePostProcessing;
       procedure SnapshotTimer;
       procedure WebpageError;
+      procedure SetCookies;
       procedure LoadPendingURL;
       procedure Execute; override;
 
@@ -651,6 +652,36 @@ begin
   Result := (FBrowser <> nil) and FBrowser.CreateBrowser;
 end;
 
+// SetCookies
+//
+procedure TCEFBrowserThread.SetCookies;
+begin
+   if FParameters.Cookies = nil then Exit;
+
+   var urlBase := FParameters.URLSchemeDomain;
+
+   var fields := TStringList.Create;
+   try
+      for var rawCookie in FParameters.Cookies do begin
+         fields.CommaText := rawCookie;
+         var url := fields.Values['url'];
+         if url = '' then url := urlBase;
+         FBrowser.SetCookie(
+            url, fields[0], fields.Values['value'],
+            '', '', //domain, path: ustring;
+            True, True, False, //                           secure, httponly, hasExpires: Boolean;
+            Now, Now, Now+1, //                     const creation, lastAccess, expires: TDateTime;
+            CEF_COOKIE_SAME_SITE_UNSPECIFIED, //                           same_site : TCefCookieSameSite;
+            CEF_COOKIE_PRIORITY_MEDIUM, //                           priority : TCefCookiePriority;
+            True, //                           aSetImmediately : boolean;
+            0 //                      aID : integer): Boolean;
+         );
+      end;
+   finally
+      fields.Free;
+   end;
+end;
+
 procedure TCEFBrowserThread.LoadPendingURL;
 begin
   if FClosing or Terminated or not(Initialized) then exit;
@@ -658,6 +689,8 @@ begin
   if assigned(FBrowserInfoCS) then
     try
       FBrowserInfoCS.Acquire;
+
+      SetCookies;
 
       if (length(FPendingURL) > 0) then
         begin
@@ -681,7 +714,7 @@ begin
 
    if FTimer = 0 then begin
       CreateTimerQueueTimer(FTimer, 0, @WaitOrTimerCallback, Pointer(ThreadID),
-                            FParameters.DelayMSec, 0, WT_EXECUTEONLYONCE);
+                            FParameters.DelayMSec*10, 0, WT_EXECUTEONLYONCE);
       if FParameters.JavaScript <> '' then begin
          var sl := TStringList.Create;
          try
@@ -737,6 +770,8 @@ begin
          FBrowser.PDFPrintOptions.margin_left := FParameters.PDFOptions.margin_left;
          FBrowser.PDFPrintOptions.margin_right := FParameters.PDFOptions.margin_right;
          FBrowser.PDFPrintOptions.margin_bottom := FParameters.PDFOptions.margin_bottom;
+         if FParameters.Scale <> 1 then
+            FBrowser.PDFPrintOptions.scale_factor := Round(FParameters.Scale * 100);
          FBrowser.PDFPrintOptions.landscape := FParameters.PDFOptions.landscape <> 0;
          FBrowser.PDFPrintOptions.header_footer_enabled := (FParameters.PDFTitle <> '') or (FParameters.PDFURL <> '');
          FBrowser.PDFPrintOptions.backgrounds_enabled := FParameters.PDFOptions.backgrounds_enabled <> 0;

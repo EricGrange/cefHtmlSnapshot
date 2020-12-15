@@ -27,8 +27,10 @@ type
       PDFOptions : TCefPdfPrintSettings;
       PDFTitle, PDFURL : String;
       JavaScript : String;
+      Cookies : array of String;
 
       procedure SaveBitmap(bmp : TBitmap);
+      function URLSchemeDomain : String;
    end;
 
 function ParseCommandLineParameters : TSnapshotParameters;
@@ -41,7 +43,7 @@ implementation
 // ------------------------------------------------------------------
 // ------------------------------------------------------------------
 
-uses LibTurboJPEG, Vcl.Imaging.pngimage;
+uses LibTurboJPEG, Vcl.Imaging.pngimage, System.StrUtils;
 
 const
    cHelp = 'cefHtmlSnaphot utility v0.1 - Html to image or pdf coversion using Chromium Embedded Framework'#10
@@ -60,11 +62,15 @@ const
          + '  -quality         Output JPEG quality (1 to 100, default 90)'#10
          + '  -compression     Output PNG compresson level (0 to 9, default 7)'#10
          + #10
+         + '  -cookie          set a cookie, format is CommaText, starting with name, then fields'#10
+         + '                   url= cookie url (uses scheme + domain from url parameter by default)'#10
+         + '                   value= value of the cookie'#10
          + '  -javascript      Name of a JavaScript file to execute just before taking the snapshot'#10
          + #10
          + '  -pdf-xxx         PDF output options outlined below'#10
          + '       page-width      page width in microns (default 210000)'#10
          + '       page-height     page height in microns (default 297000)'#10
+         + '       margins         sets all margins in points'#10
          + '       margin-top      top margin in points (default 20)'#10
          + '       margin-left     left margin in points (default 20)'#10
          + '       margin-right    right margin in points (default 20)'#10
@@ -130,8 +136,13 @@ begin
          if (lastP = '?') or (lastP = 'h') or (lastP = 'help') then begin
             Result.ErrorText := cHelp;
          end else if lastP = 'url' then begin
+            if FileExists(p) then begin
+               if CustomPathIsRelative(p) then
+                  p := IncludeTrailingPathDelimiter(GetCurrentDir) + p;
+               p := 'file://' + p.Replace('\', '/');
+            end;
             Result.URL := p;
-            // TODO: basic syntax check
+
          end else if (lastP = 'width') or (lastP = 'w') then begin
             Result.ErrorText := TryParseIntegerParameter('Width', p, Result.Width, 1, 2048);
          end else if (lastP = 'height') or (lastP = 'h') then begin
@@ -146,6 +157,10 @@ begin
             Result.ErrorText := TryParseIntegerParameter('Quality', p, Result.JPEGQuality, 1, 100);
          end else if lastP = 'compression' then begin
             Result.ErrorText := TryParseIntegerParameter('Quality', p, Result.JPEGQuality, 1, 100);
+         end else if lastP = 'cookie' then begin
+            var n := Length(Result.Cookies);
+            SetLength(Result.Cookies, n+1);
+            Result.Cookies[n] := p;
          end else if lastP = 'javascript' then begin
             if CustomPathIsRelative(p) then
                p := IncludeTrailingPathDelimiter(GetCurrentDir) + p;
@@ -156,6 +171,11 @@ begin
             Result.ErrorText := TryParseIntegerParameter('PDF-page-width', p, Result.PDFOptions.page_width, 10000, 10000000);
          end else if lastP = 'pdf-page-height' then begin
             Result.ErrorText := TryParseIntegerParameter('PDF-page-height', p, Result.PDFOptions.page_height, 10000, 10000000);
+         end else if lastP = 'pdf-margins' then begin
+            Result.ErrorText := TryParseIntegerParameter('PDF-margins', p, Result.PDFOptions.margin_top, 0, 10000);
+            Result.PDFOptions.margin_left := Result.PDFOptions.margin_top;
+            Result.PDFOptions.margin_right := Result.PDFOptions.margin_top;
+            Result.PDFOptions.margin_bottom := Result.PDFOptions.margin_top;
          end else if lastP = 'pdf-margin-top' then begin
             Result.ErrorText := TryParseIntegerParameter('PDF-margin-top', p, Result.PDFOptions.margin_top, 0, 10000);
          end else if lastP = 'pdf-margin-left' then begin
@@ -275,6 +295,14 @@ begin
       sofJPG : SaveBitmapToJPEG(bmp, OutputFilePath, JPEGQuality);
       sofPNG : SaveBitmapToPNG(bmp, OutputFilePath, PNGCompressionLevel);
    end;
+end;
+
+// URLSchemeDomain
+//
+function TSnapshotParameters.URLSchemeDomain : String;
+begin
+   var p := Pos('//', URL);
+   Result := Copy(URL, 1, PosEx('/', URL, p+2));
 end;
 
 end.
