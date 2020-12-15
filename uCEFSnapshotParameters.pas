@@ -43,7 +43,9 @@ implementation
 uses LibTurboJPEG, Vcl.Imaging.pngimage;
 
 const
-   cHelp = 'cefHtmlSnapshot [-arg1 value1] [-arg2 value2] ...'#10#10
+   cHelp = 'cefHtmlSnaphot utility v0.1 - Html to image or pdf coversion using Chromium Embedded Framework'#10
+         + 'Using CEF 87.1.12.0, CEF4Delphi, TurboJPEG see https://github.com/EricGrange/cefHtmlSnapshot'#10#10
+         + 'cefHtmlSnapshot.exe [-arg1 value1] [-arg2 value2] ...'#10#10
          + '  -?, -h, -help    This inline documentation'#10
          + '  -url             URL of the website or file to be snapshotted (required)'#10
          + '  -delay, -d       Delay in milliseconds, between 100 ms and 30 sec (default 1 sec)'#10

@@ -84,6 +84,7 @@ type
       FFailedUrl             : ustring;
       FPendingUrl            : ustring;
       FSyncEvents            : boolean;
+      FTimer                 : THandle;
 
       function  GetErrorCode : integer;
       function  GetErrorText : ustring;
@@ -115,6 +116,7 @@ type
       procedure CloseBrowser;
       procedure InitError;
       procedure WebpagePostProcessing;
+      procedure SnapshotTimer;
       procedure WebpageError;
       procedure LoadPendingURL;
       procedure Execute; override;
@@ -146,6 +148,8 @@ const
   CEF_WEBPAGE_ERROR_MSG    = WM_APP + 2;
   CEF_CLOSE_BROWSER_MSG    = WM_APP + 3;
   CEF_LOAD_PENDING_URL_MSG = WM_APP + 4;
+
+  CEF_SNAPSHOT_TIMER_MSG   = WM_APP + 5;
 
 // *************************************
 // ******** TVirtualBufferPanel ********
@@ -665,13 +669,25 @@ begin
     end;
 end;
 
+procedure WaitOrTimerCallback(Context: Pointer; Success: Boolean); stdcall;
+begin
+   PostThreadMessage(NativeUInt(Context), CEF_SNAPSHOT_TIMER_MSG, 0, 0);
+end;
+
 procedure TCEFBrowserThread.WebpagePostProcessing;
 begin
    if FClosing or Terminated then
       exit;
 
-   Sleep(FParameters.DelayMSec);
+   if FTimer = 0 then
+      CreateTimerQueueTimer(FTimer, 0, @WaitOrTimerCallback, Pointer(ThreadID),
+                            FParameters.DelayMSec, 0, WT_EXECUTEONLYONCE);
+end;
 
+// SnapshotTimer
+//
+procedure TCEFBrowserThread.SnapshotTimer;
+begin
    if TakeSnapshot and assigned(FOnSnapshotAvailable) then begin
       if FParameters.OutputFormat <> sofPDF then begin
          if FSyncEvents then
@@ -703,24 +719,6 @@ begin
     try
       FBrowserInfoCS.Acquire;
 
-      if assigned(FPanel.Buffer) and not(FPanel.Buffer.Empty) then
-        begin
-          if (FSnapshot = nil) then
-            begin
-              FSnapshot             := TBitmap.Create;
-              FSnapshot.PixelFormat := pf32bit;
-              FSnapshot.HandleType  := bmDIB;
-            end;
-
-          if (FSnapshot.Width <> FPanel.BufferWidth) then
-            FSnapshot.Width := FPanel.BufferWidth;
-
-          if (FSnapshot.Height <> FPanel.BufferHeight) then
-            FSnapshot.Height := FPanel.BufferHeight;
-
-          FSnapshot.Canvas.Draw(0, 0, FPanel.Buffer);
-          Result := True;
-        end;
       if FParameters.OutputFormat = sofPDF then begin
          FBrowser.PDFPrintOptions.page_width := FParameters.PDFOptions.page_width;
          FBrowser.PDFPrintOptions.page_height := FParameters.PDFOptions.page_height;
@@ -733,6 +731,25 @@ begin
          FBrowser.PDFPrintOptions.header_footer_enabled := (FParameters.PDFTitle <> '') or (FParameters.PDFURL <> '');
          FBrowser.PDFPrintOptions.backgrounds_enabled := FParameters.PDFOptions.backgrounds_enabled <> 0;
          FBrowser.PrintToPDF(FParameters.OutputFilePath, FParameters.PDFTitle, FParameters.PDFURL);
+      end else begin
+         if assigned(FPanel.Buffer) and not(FPanel.Buffer.Empty) then
+           begin
+             if (FSnapshot = nil) then
+               begin
+                 FSnapshot             := TBitmap.Create;
+                 FSnapshot.PixelFormat := pf32bit;
+                 FSnapshot.HandleType  := bmDIB;
+               end;
+
+             if (FSnapshot.Width <> FPanel.BufferWidth) then
+               FSnapshot.Width := FPanel.BufferWidth;
+
+             if (FSnapshot.Height <> FPanel.BufferHeight) then
+               FSnapshot.Height := FPanel.BufferHeight;
+
+             FSnapshot.Canvas.Draw(0, 0, FPanel.Buffer);
+             Result := True;
+           end;
       end;
     finally
       FBrowserInfoCS.Release;
@@ -787,6 +804,7 @@ begin
             CEF_LOAD_PENDING_URL_MSG : LoadPendingURL;
             CEF_WEBPAGE_LOADED_MSG   : WebpagePostProcessing;
             CEF_WEBPAGE_ERROR_MSG    : WebpageError;
+            CEF_SNAPSHOT_TIMER_MSG   : SnapshotTimer;
             WM_QUIT                  : TempCont := False;
           end;
 
