@@ -6,9 +6,6 @@
         <Projects Include="cefHtmlSnapshot.dproj">
             <Dependencies/>
         </Projects>
-        <Projects Include="cefHtmlSnapshot_sp.dproj">
-            <Dependencies/>
-        </Projects>
     </ItemGroup>
     <ProjectExtensions>
         <Borland.Personality>Default.Personality.12</Borland.Personality>
@@ -26,23 +23,14 @@
     <Target Name="cefHtmlSnapshot:Make">
         <MSBuild Projects="cefHtmlSnapshot.dproj" Targets="Make"/>
     </Target>
-    <Target Name="cefHtmlSnapshot_sp">
-        <MSBuild Projects="cefHtmlSnapshot_sp.dproj"/>
-    </Target>
-    <Target Name="cefHtmlSnapshot_sp:Clean">
-        <MSBuild Projects="cefHtmlSnapshot_sp.dproj" Targets="Clean"/>
-    </Target>
-    <Target Name="cefHtmlSnapshot_sp:Make">
-        <MSBuild Projects="cefHtmlSnapshot_sp.dproj" Targets="Make"/>
-    </Target>
     <Target Name="Build">
-        <CallTarget Targets="cefHtmlSnapshot;cefHtmlSnapshot_sp"/>
+        <CallTarget Targets="cefHtmlSnapshot"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="cefHtmlSnapshot:Clean;cefHtmlSnapshot_sp:Clean"/>
+        <CallTarget Targets="cefHtmlSnapshot:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="cefHtmlSnapshot:Make;cefHtmlSnapshot_sp:Make"/>
+        <CallTarget Targets="cefHtmlSnapshot:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>

@@ -26,6 +26,7 @@ type
       PNGCompressionLevel : Integer;
       PDFOptions : TCefPdfPrintSettings;
       PDFTitle, PDFURL : String;
+      JavaScript : String;
 
       procedure SaveBitmap(bmp : TBitmap);
    end;
@@ -58,6 +59,8 @@ const
          + '  -scale, -s       Scale of the website relative to 96dpi, between 0.1 and 10.0 (default 1.0)'#10
          + '  -quality         Output JPEG quality (1 to 100, default 90)'#10
          + '  -compression     Output PNG compresson level (0 to 9, default 7)'#10
+         + #10
+         + '  -javascript      Name of a JavaScript file to execute just before taking the snapshot'#10
          + #10
          + '  -pdf-xxx         PDF output options outlined below'#10
          + '       page-width      page width in microns (default 210000)'#10
@@ -142,7 +145,13 @@ begin
          end else if lastP = 'quality' then begin
             Result.ErrorText := TryParseIntegerParameter('Quality', p, Result.JPEGQuality, 1, 100);
          end else if lastP = 'compression' then begin
-            Result.ErrorText := TryParseIntegerParameter('Compression', p, Result.PNGCompressionLevel, 0, 9);
+            Result.ErrorText := TryParseIntegerParameter('Quality', p, Result.JPEGQuality, 1, 100);
+         end else if lastP = 'javascript' then begin
+            if CustomPathIsRelative(p) then
+               p := IncludeTrailingPathDelimiter(GetCurrentDir) + p;
+            if not FileExists(p) then
+               Result.ErrorText := 'Javascript file not found "' + p + '"';
+            Result.JavaScript := p;
          end else if lastP = 'pdf-page-width' then begin
             Result.ErrorText := TryParseIntegerParameter('PDF-page-width', p, Result.PDFOptions.page_width, 10000, 10000000);
          end else if lastP = 'pdf-page-height' then begin

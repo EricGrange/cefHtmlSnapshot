@@ -11,3 +11,5 @@ __history
 *.dsk
 /*.exe
 *.tds
+.backup
+__recovery

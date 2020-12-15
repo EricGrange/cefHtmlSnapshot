@@ -89,9 +89,13 @@
         <DCC_Optimize>true</DCC_Optimize>
         <DCC_GenerateStackFrames>false</DCC_GenerateStackFrames>
         <DCC_MapFile>3</DCC_MapFile>
-        <Debugger_RunParams>-url https://delphitools.info/ -out snapshot.pdf -pdf-backgrounds 1</Debugger_RunParams>
+        <Debugger_RunParams>-url https://delphitools.info/ -out snapshot.jpg -javascript D:\GC\cefHtmlSnapshot\cookie-buster.js</Debugger_RunParams>
         <DCC_DebugInfoInTds>true</DCC_DebugInfoInTds>
         <Icon_MainIcon>cefHtmlSnapshot_Icon.ico</Icon_MainIcon>
+        <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
+        <VerInfo_MajorVer>0</VerInfo_MajorVer>
+        <VerInfo_MinorVer>1</VerInfo_MinorVer>
+        <VerInfo_Keys>CompanyName=delphitools.info;FileDescription=$(MSBuildProjectName);FileVersion=0.1.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2)'!=''">
         <DCC_LocalDebugSymbols>false</DCC_LocalDebugSymbols>

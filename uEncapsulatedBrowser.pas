@@ -117,12 +117,29 @@ begin
    GlobalCEFApp.WindowlessRenderingEnabled := True;
    GlobalCEFApp.EnableHighDPISupport       := True;
    GlobalCEFApp.ShowMessageDlg             := False;                    // This demo shouldn't show any window, just console messages.
-   GlobalCEFApp.BlinkSettings              := 'hideScrollbars';         // This setting removes all scrollbars to capture a cleaner snapshot
+   GlobalCEFApp.BlinkSettings              :=
+        'hideScrollbars=true'            // This setting removes all scrollbars to capture a cleaner snapshot
+      + ',scrollAnimatorEnabled=false'  // No scroll animations
+      ;
    GlobalCEFApp.OnContextInitialized       := GlobalCEFApp_OnContextInitialized;
    GlobalCEFApp.BrowserSubprocessPath      := 'cefHtmlSnapshot.exe'; // This is the other EXE for the CEF subprocesses. It's on the same directory as this app.
 
    SetCurrentDir(ExtractFilePath(ParamStr(0)) + cChromiumSubFolder);
    vParameters := parameters;
+
+   GlobalCEFApp.EnableGPU := False;
+   GlobalCEFApp.SmoothScrolling := STATE_DISABLED;
+   GlobalCEFApp.EnableSpeechInput := False;
+   GlobalCEFApp.EnableUsermediaScreenCapturing := False;
+   GlobalCEFApp.EnablePrintPreview := False;
+   GlobalCEFApp.DisableJavascriptAccessClipboard := True;
+   GlobalCEFApp.DisableSpellChecking := True;
+   GlobalCEFApp.FlashEnabled := False;
+   GlobalCEFApp.MuteAudio := True;
+   GlobalCEFApp.AllowFileAccessFromFiles := True;
+
+   GlobalCEFApp.DeleteCache := True;
+   GlobalCEFApp.DeleteCookies := True;
 
    GlobalCEFApp.StartMainProcess;
 end;
@@ -184,8 +201,9 @@ procedure TEncapsulatedBrowser.Thread_OnSnapshotAvailable(Sender: TObject);
 begin
   // This code is executed in the TCEFBrowserThread thread context while the main application thread is waiting for MainAppEvent.
 
-  if (FThread = nil) or not(FThread.SaveSnapshotToFile(Parameters.OutputFilePath)) then
-    FErrorText := 'There was an error copying the snapshot';
+   if Parameters.OutputFormat <> sofPDF then
+     if (FThread = nil) or not(FThread.SaveSnapshotToFile(Parameters.OutputFilePath)) then
+        FErrorText := 'There was an error copying the snapshot';
 
   if assigned(MainAppEvent) then
     MainAppEvent.SetEvent;

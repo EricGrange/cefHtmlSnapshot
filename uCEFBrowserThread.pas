@@ -679,9 +679,19 @@ begin
    if FClosing or Terminated then
       exit;
 
-   if FTimer = 0 then
+   if FTimer = 0 then begin
       CreateTimerQueueTimer(FTimer, 0, @WaitOrTimerCallback, Pointer(ThreadID),
                             FParameters.DelayMSec, 0, WT_EXECUTEONLYONCE);
+      if FParameters.JavaScript <> '' then begin
+         var sl := TStringList.Create;
+         try
+            sl.LoadFromFile(FParameters.JavaScript);
+            FBrowser.ExecuteJavaScript(sl.Text, FParameters.URL);
+         finally
+            sl.Free;
+         end;
+      end;
+   end;
 end;
 
 // SnapshotTimer
