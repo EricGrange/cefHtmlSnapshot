@@ -666,23 +666,40 @@ begin
 
    var fields := TStringList.Create;
    try
+      var cookieID := 1000; // arbitrary start value
       for var rawCookie in FParameters.Cookies do begin
          fields.CommaText := rawCookie;
+
          var url := fields.Values['url'];
          if url = '' then url := urlBase;
-         var p := Pos('//', url);
-         var domain := Copy(url, p+2, Pos('/', url, p+2)-p-2);
+
+         var domain := fields.Values['domain'];
+         if domain = '' then begin
+            var p := Pos('//', url);
+            domain := Copy(url, p+2, Pos('/', url, p+2)-p-2);
+         end;
+
+         var path := fields.Values['path'];
+         if path = '' then
+            path := '/';
+
+         var secure := url.StartsWith('https:');
+         if fields.Values['secure'] <> '' then
+            secure := (fields.Values['secure'] = '1');
+
+         var httponly := (fields.Values['httponly'] = '1');
 
          FBrowser.SetCookie(
-            url, fields.Names[0], fields.ValueFromIndex[0],
-            domain, '/', //domain, path: ustring;
-            url.StartsWith('https:'), False, False, //                           secure, httponly, hasExpires: Boolean;
-            Now, Now, Now+1, //                     const creation, lastAccess, expires: TDateTime;
-            CEF_COOKIE_SAME_SITE_UNSPECIFIED, //                           same_site : TCefCookieSameSite;
-            CEF_COOKIE_PRIORITY_MEDIUM, //                           priority : TCefCookiePriority;
-            True, //                           aSetImmediately : boolean;
-            0 //                      aID : integer): Boolean;
+            url, fields.Names[0], fields.ValueFromIndex[0], // url, name, value
+            domain, path,
+            secure, httponly, False,                        // secure, httponly, hasExpires
+            Now, Now, Now+1,                                // creation, lastAccess, expires
+            CEF_COOKIE_SAME_SITE_UNSPECIFIED,               // same_site
+            CEF_COOKIE_PRIORITY_MEDIUM,                     // priority
+            True,                                           // aSetImmediately
+            cookieID                                        // aID
          );
+         Inc(cookieID);
       end;
    finally
       fields.Free;

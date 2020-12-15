@@ -63,7 +63,11 @@ const
          + '  -compression     Output PNG compresson level (0 to 9, default 7)'#10
          + #10
          + '  -cookie          set a cookie, format is CommaText, starting with name=value, then fields'#10
-         + '                   url= cookie url (uses scheme + domain from url parameter by default)'#10
+         + '                   url=       cookie url (uses scheme + domain from url parameter by default)'#10
+         + '                   domain=    cookie domain (uses domain from url parameter by default)'#10
+         + '                   path=      cookie path ("/" by default)'#10
+         + '                   secure=    secure flag (0 or 1, by default 1 if url starts with "https:")'#10
+         + '                   httponly=  htpOnly flag (0 or 1, by default 0)'#10
          + '  -javascript      Name of a JavaScript file to execute just before taking the snapshot'#10
          + #10
          + '  -pdf-xxx         PDF output options outlined below'#10
