@@ -59,4 +59,6 @@ cefHtmlSnapshot.exe url_or_file [-arg1 value1] [-arg2 value2] ... output_file
 Takes a 1024x768 snapshot of my blog and save it in Jpeg format, while running a JS script
 to remove the EU cookie law banner.
 
+```
 cefHtmlSnapshot https://www.delphitools.info/ --javascript Scripts\cookie-law-buster.js snapshot.jpg
+```
