@@ -19,6 +19,7 @@ TurboJPEG support https://bitbucket.org/egrange/dwscript/src/master/Libraries/Gr
 
 ## Command line arguments
 
+```
 cefHtmlSnapshot.exe url_or_file [-arg1 value1] [-arg2 value2] ... output_file
 
   -?, -h, --help    This inline documentation
@@ -51,7 +52,8 @@ cefHtmlSnapshot.exe url_or_file [-arg1 value1] [-arg2 value2] ... output_file
         margin-bottom   bottom margin in points (default 20)
         landscape       portait (default, 0) or landscape (1)
         backgrounds     enable backgrounds (1) or not (default, 0)
-		
+```
+
 ## Exemple
 
 Takes a 1024x768 snapshot of my blog and save it in Jpeg format, while running a JS script
