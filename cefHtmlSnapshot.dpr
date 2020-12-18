@@ -46,6 +46,9 @@ program cefHtmlSnapshot;
   {$SetPEFlags $20}
 {$ENDIF}
 
+{$WEAKLINKRTTI ON}
+{$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}
+
 {$R *.res}
 
 uses
