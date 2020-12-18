@@ -85,6 +85,8 @@ type
       FPendingUrl            : ustring;
       FSyncEvents            : boolean;
       FTimer                 : THandle;
+      FFullRepaintRequested  : boolean;
+      FPaintedAfterRepaintrequest : boolean;
 
       function  GetErrorCode : integer;
       function  GetErrorText : ustring;
@@ -420,6 +422,8 @@ var
   TempForcedResize : boolean;
   TempSrcRect : TRect;
 begin
+   if FFullRepaintRequested then
+      FPaintedAfterRepaintrequest := True;
   if assigned(FResizeCS) and assigned(FPanel) then
     try
       FResizeCS.Acquire;
@@ -456,7 +460,7 @@ begin
               TempBufferBits   := FPanel.BufferBits;
             end;
 
-          if (TempBufferBits <> nil) then
+          if (TempBufferBits <> nil) and FFullRepaintRequested then
             begin
               SrcStride := aWidth * SizeOf(TRGBQuad);
               DstStride := - TempScanlineSize;
@@ -736,7 +740,7 @@ begin
 
    if FTimer = 0 then begin
       CreateTimerQueueTimer(FTimer, 0, @WaitOrTimerCallback, Pointer(ThreadID),
-                            FParameters.DelayMSec*10, 0, WT_EXECUTEONLYONCE);
+                            FParameters.DelayMSec, 0, WT_EXECUTEONLYONCE);
       if FParameters.JavaScript <> '' then begin
          var sl := TStringList.Create;
          try
@@ -753,14 +757,30 @@ end;
 //
 procedure TCEFBrowserThread.SnapshotTimer;
 begin
-   if TakeSnapshot and assigned(FOnSnapshotAvailable) then begin
-      if FParameters.OutputFormat <> sofPDF then begin
-         if FSyncEvents then
-            Synchronize(DoOnSnapshotAvailable)
-         else
-            DoOnSnapshotAvailable;
+   if FFullRepaintRequested then begin
+
+      if FPaintedAfterRepaintrequest then begin
+         if TakeSnapshot and assigned(FOnSnapshotAvailable) then begin
+            if FParameters.OutputFormat <> sofPDF then begin
+               if FSyncEvents then
+                  Synchronize(DoOnSnapshotAvailable)
+               else
+                  DoOnSnapshotAvailable;
+            end;
+         end;
+         Exit;
       end;
+
+   end else begin
+
+      FFullRepaintRequested := True;
+      FBrowser.Invalidate(PET_VIEW);
+
    end;
+
+   FTimer := 0;
+   CreateTimerQueueTimer(FTimer, 0, @WaitOrTimerCallback, Pointer(ThreadID),
+                         100, 0, WT_EXECUTEONLYONCE);
 end;
 
 procedure TCEFBrowserThread.WebpageError;

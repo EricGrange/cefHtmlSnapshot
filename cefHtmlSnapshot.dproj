@@ -89,7 +89,7 @@
         <DCC_Optimize>true</DCC_Optimize>
         <DCC_GenerateStackFrames>false</DCC_GenerateStackFrames>
         <DCC_MapFile>3</DCC_MapFile>
-        <Debugger_RunParams>-url https://www.delphitools.info/ -out snapshot.jpg -javascript Scripts\cookie-law-buster.js</Debugger_RunParams>
+        <Debugger_RunParams>https://www.delphitools.info/ -javascript Scripts\cookie-law-buster.js snapshot.jpg</Debugger_RunParams>
         <DCC_DebugInfoInTds>true</DCC_DebugInfoInTds>
         <Icon_MainIcon>cefHtmlSnapshot_Icon.ico</Icon_MainIcon>
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>

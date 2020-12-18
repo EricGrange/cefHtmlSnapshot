@@ -118,7 +118,7 @@ end;
 var
    parameters : TSnapshotParameters;
 begin
-   if (ParamCount > 0) and (Copy(ParamStr(1), 1, 2) = '--') then begin
+   if (ParamCount > 0) and (Copy(ParamStr(1), 1, 6) = '--type') then begin
       RunAsSubProcess;
       Exit;
    end;
