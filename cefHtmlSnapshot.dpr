@@ -39,6 +39,8 @@ program cefHtmlSnapshot;
 
 {$I cef.inc}
 
+{.$define USE_BUNDLE}
+
 {$APPTYPE CONSOLE}
 
 {$IFDEF WIN32}
@@ -58,6 +60,7 @@ uses
   SysUtils,
   {$ENDIF }
   uCEFApplication, uCEFApplicationCore,
+  {$ifdef USE_BUNDLE} UChromiumBundle,{$endif}
   uEncapsulatedBrowser in 'uEncapsulatedBrowser.pas',
   uCEFBrowserThread in 'uCEFBrowserThread.pas',
   uCEFSnapshotParameters in 'uCEFSnapshotParameters.pas';
@@ -134,7 +137,12 @@ begin
    end;
    try
       try
+         {$ifdef USE_BUNDLE}
+         vChromiumBundleQuickCheck := True;
+         CreateGlobalCEFApp(parameters, ChromiumUnBundledPath);
+         {$else}
          CreateGlobalCEFApp(parameters);
+         {$endif}
          if WaitForMainAppEvent then
             WriteResult;
       except

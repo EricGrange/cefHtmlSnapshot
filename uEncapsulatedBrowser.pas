@@ -68,7 +68,7 @@ type
       property ErrorText       : ustring    read FErrorText;
   end;
 
-procedure CreateGlobalCEFApp(const parameters : TSnapshotParameters);
+procedure CreateGlobalCEFApp(const parameters : TSnapshotParameters; const chromiumPath : String = '');
 function  WaitForMainAppEvent : boolean;
 procedure WriteResult;
 
@@ -111,7 +111,7 @@ begin
       WriteLn('Snapshot saved successfully as ' + EncapsulatedBrowser.Parameters.OutputFilePath);
 end;
 
-procedure CreateGlobalCEFApp(const parameters : TSnapshotParameters);
+procedure CreateGlobalCEFApp(const parameters : TSnapshotParameters; const chromiumPath : String = '');
 begin
    GlobalCEFApp                            := TCefApplication.Create;
    GlobalCEFApp.WindowlessRenderingEnabled := True;
@@ -124,7 +124,9 @@ begin
    GlobalCEFApp.OnContextInitialized       := GlobalCEFApp_OnContextInitialized;
    GlobalCEFApp.BrowserSubprocessPath      := 'cefHtmlSnapshot.exe'; // This is the other EXE for the CEF subprocesses. It's on the same directory as this app.
 
-   SetCurrentDir(ExtractFilePath(ParamStr(0)) + cChromiumSubFolder);
+   if chromiumPath = '' then
+      SetCurrentDir(ExtractFilePath(ParamStr(0)) + cChromiumSubFolder)
+   else SetCurrentDir(chromiumPath);
    vParameters := parameters;
 
    GlobalCEFApp.EnableGPU := False;
@@ -134,7 +136,6 @@ begin
    GlobalCEFApp.EnablePrintPreview := False;
    GlobalCEFApp.DisableJavascriptAccessClipboard := True;
    GlobalCEFApp.DisableSpellChecking := True;
-   GlobalCEFApp.FlashEnabled := False;
    GlobalCEFApp.MuteAudio := True;
    GlobalCEFApp.AllowFileAccessFromFiles := True;
    GlobalCEFApp.EnableMediaStream := False;
