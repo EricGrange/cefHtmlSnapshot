@@ -141,6 +141,7 @@ begin
    GlobalCEFApp.EnableMediaStream := False;
 
    GlobalCEFApp.IgnoreCertificateErrors := parameters.IgnoreCertificateErrors;
+   GlobalCEFApp.NoSandbox := parameters.NoSandbox;
 
    GlobalCEFApp.DeleteCache := True;
    GlobalCEFApp.DeleteCookies := True;

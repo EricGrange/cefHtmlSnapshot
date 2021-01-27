@@ -24,6 +24,7 @@ cefHtmlSnapshot.exe url_or_file [-arg1 value1] [-arg2 value2] ... output_file
 
   -?, -h, --help    This inline documentation
   url_or_file       URL of the website or file to be snapshotted (required)
+                    If a .url file is specified, the URL will be read from it
   output_file       Output file pathname, extension determines format (default snapshot.bmp)
 
   -w, --width       Width of the snapshot, between 1 and 2048 (default 1024)
@@ -42,6 +43,7 @@ cefHtmlSnapshot.exe url_or_file [-arg1 value1] [-arg2 value2] ... output_file
                     httponly=  htpOnly flag (0 or 1, by default 0)
   --javascript      Name of a JavaScript file to execute just before taking the snapshot
   --ignore-certificate-errors Turns on/off certificate checks (0 or 1, by default 0)
+  --no-sandbox      Turns on/off sandbox (0 or 1, by default 0)
 
   --pdf-xxx         PDF output options outlined below
         page-width      page width in microns (default 210000)

@@ -3,7 +3,7 @@ unit uCEFSnapshotParameters;
 interface
 
 uses
-   System.Classes, System.SysUtils, Vcl.Graphics,
+   System.Classes, System.SysUtils, Vcl.Graphics, System.IniFiles,
    uCEFTypes, uCEFMiscFunctions;
 
 const
@@ -29,6 +29,7 @@ type
       JavaScript : String;
       Cookies : array of String;
       IgnoreCertificateErrors : Boolean;
+      NoSandbox : Boolean;
 
       procedure SaveBitmap(bmp : TBitmap);
       function URLSchemeDomain : String;
@@ -53,6 +54,7 @@ const
          + #10
          + '  -?, -h, --help    This inline documentation'#10
          + '  url_or_file       URL of the website or file to be snapshotted (required)'#10
+         + '                    If a .url file is specified, the URL will be read from it'#10
          + '  output_file       Output file pathname, extension determines format (default snapshot.bmp)'#10
          + #10
          + '  -w, --width       Width of the snapshot, between 1 and 2048 (default 1024)'#10
@@ -71,6 +73,7 @@ const
          + '                    httponly=  htpOnly flag (0 or 1, by default 0)'#10
          + '  --javascript      Name of a JavaScript file to execute just before taking the snapshot'#10
          + '  --ignore-certificate-errors Turns on/off certificate checks (0 or 1, by default 0)'#10
+         + '  --no-sandbox      Turns on/off sandbox (0 or 1, by default 0)'#10
          + #10
          + '  --pdf-xxx         PDF output options outlined below'#10
          + '        page-width      page width in microns (default 210000)'#10
@@ -102,6 +105,18 @@ function ParseCommandLineParameters : TSnapshotParameters;
       if (value < mini) or (value > maxi) then begin
          Result := 'Invalid ' + name + ' value: "' + p + '"';
       end else Result := '';
+   end;
+
+   function URLFromURLFile(const fileName : String) : String;
+   var
+      ini : TIniFile;
+   begin
+      ini := TIniFile.Create(fileName);
+      try
+         Result := ini.ReadString('InternetShortcut', 'URL', '');
+      finally
+         ini.Free;
+      end;
    end;
 
 begin
@@ -138,9 +153,15 @@ begin
 
    Result.URL := ParamStr(1);
    if FileExists(Result.URL) then begin
-      if CustomPathIsRelative(Result.URL) then
-         Result.URL := IncludeTrailingPathDelimiter(GetCurrentDir) + Result.URL;
-      Result.URL := 'file://' + Result.URL.Replace('\', '/');
+      if SameText(ExtractFileExt(Result.URL), '.url') then begin
+         Result.URL := URLFromURLFile(Result.URL);
+         if Result.URL = '' then
+            Result.ErrorText := 'URL not found in file';
+      end else begin
+         if CustomPathIsRelative(Result.URL) then
+            Result.URL := IncludeTrailingPathDelimiter(GetCurrentDir) + Result.URL;
+         Result.URL := 'file://' + Result.URL.Replace('\', '/');
+      end;
    end;
 
    // last parameter is output_file
@@ -202,6 +223,11 @@ begin
                Result.IgnoreCertificateErrors := True
             else if p <> '0' then
                Result.ErrorText := 'Unsupported option "' + p + '" for ignore-certificate-errors';
+         end else if lastP = '-no-sandbox' then begin
+            if p = '1' then
+               Result.NoSandbox := True
+            else if p <> '0' then
+               Result.ErrorText := 'Unsupported option "' + p + '" for no-sandbox';
          end else if lastP = '-pdf-page-width' then begin
             Result.ErrorText := TryParseIntegerParameter('PDF-page-width', p, Result.PDFOptions.page_width, 10000, 10000000);
          end else if lastP = '-pdf-page-height' then begin
