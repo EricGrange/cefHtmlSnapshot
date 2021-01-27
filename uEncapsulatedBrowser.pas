@@ -140,6 +140,8 @@ begin
    GlobalCEFApp.AllowFileAccessFromFiles := True;
    GlobalCEFApp.EnableMediaStream := False;
 
+   GlobalCEFApp.IgnoreCertificateErrors := parameters.IgnoreCertificateErrors;
+
    GlobalCEFApp.DeleteCache := True;
    GlobalCEFApp.DeleteCookies := True;
    GlobalCEFApp.PersistSessionCookies := False;

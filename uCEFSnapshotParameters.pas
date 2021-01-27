@@ -28,6 +28,7 @@ type
       PDFTitle, PDFURL : String;
       JavaScript : String;
       Cookies : array of String;
+      IgnoreCertificateErrors : Boolean;
 
       procedure SaveBitmap(bmp : TBitmap);
       function URLSchemeDomain : String;
@@ -69,6 +70,7 @@ const
          + '                    secure=    secure flag (0 or 1, by default 1 if url starts with "https:")'#10
          + '                    httponly=  htpOnly flag (0 or 1, by default 0)'#10
          + '  --javascript      Name of a JavaScript file to execute just before taking the snapshot'#10
+         + '  --ignore-certificate-errors Turns on/off certificate checks (0 or 1, by default 0)'#10
          + #10
          + '  --pdf-xxx         PDF output options outlined below'#10
          + '        page-width      page width in microns (default 210000)'#10
@@ -195,6 +197,11 @@ begin
             if not FileExists(p) then
                Result.ErrorText := 'Javascript file not found "' + p + '"';
             Result.JavaScript := p;
+         end else if lastP = '-ignore-certificate-errors' then begin
+            if p = '1' then
+               Result.IgnoreCertificateErrors := True
+            else if p <> '0' then
+               Result.ErrorText := 'Unsupported option "' + p + '" for ignore-certificate-errors';
          end else if lastP = '-pdf-page-width' then begin
             Result.ErrorText := TryParseIntegerParameter('PDF-page-width', p, Result.PDFOptions.page_width, 10000, 10000000);
          end else if lastP = '-pdf-page-height' then begin

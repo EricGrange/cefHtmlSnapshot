@@ -41,6 +41,7 @@ cefHtmlSnapshot.exe url_or_file [-arg1 value1] [-arg2 value2] ... output_file
                     secure=    secure flag (0 or 1, by default 1 if url starts with "https:")
                     httponly=  htpOnly flag (0 or 1, by default 0)
   --javascript      Name of a JavaScript file to execute just before taking the snapshot
+  --ignore-certificate-errors Turns on/off certificate checks (0 or 1, by default 0)
 
   --pdf-xxx         PDF output options outlined below
         page-width      page width in microns (default 210000)
