@@ -171,7 +171,7 @@ begin
             lastP := LowerCase(Copy(p, 2));
          end;
       else
-         if (lastP = '?') or (lastP = 'h') or (lastP = '-help') then begin
+         if (lastP = '?') or ((lastP = 'h') and (i = 2)) or (lastP = '-help') then begin
             Result.ErrorText := cHelp;
          end else if (lastP = '-width') or (lastP = 'w') then begin
             Result.ErrorText := TryParseIntegerParameter('Width', p, Result.Width, 1, 2048);
