@@ -13,3 +13,6 @@ __history
 *.tds
 .backup
 __recovery
+/Chromium88.2
+/Chromium88
+/Releases
