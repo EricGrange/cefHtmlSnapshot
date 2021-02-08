@@ -7,7 +7,7 @@ uses
    uCEFTypes, uCEFMiscFunctions;
 
 const
-   cChromiumSubFolder = 'Chromium88';
+   cChromiumSubFolder = 'Chromium88.2';
    cDLLSubfolder = 'Libraries';
 
 type
