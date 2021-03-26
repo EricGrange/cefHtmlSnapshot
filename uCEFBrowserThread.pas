@@ -804,7 +804,7 @@ begin
     try
       FBrowserInfoCS.Acquire;
 
-      if FParameters.OutputFormat = sofPDF then begin
+      if FParameters.OutputFormat in [ sofPDF, sofPrinter ] then begin
          FBrowser.PDFPrintOptions.page_width := FParameters.PDFOptions.page_width;
          FBrowser.PDFPrintOptions.page_height := FParameters.PDFOptions.page_height;
          FBrowser.PDFPrintOptions.margin_type := FParameters.PDFOptions.margin_type;
@@ -817,7 +817,9 @@ begin
          FBrowser.PDFPrintOptions.landscape := FParameters.PDFOptions.landscape <> 0;
          FBrowser.PDFPrintOptions.header_footer_enabled := (FParameters.PDFTitle <> '') or (FParameters.PDFURL <> '');
          FBrowser.PDFPrintOptions.backgrounds_enabled := FParameters.PDFOptions.backgrounds_enabled <> 0;
-         FBrowser.PrintToPDF(FParameters.OutputFilePath, FParameters.PDFTitle, FParameters.PDFURL);
+         if FParameters.Print then
+            FBrowser.Print
+         else FBrowser.PrintToPDF(FParameters.OutputFilePath, FParameters.PDFTitle, FParameters.PDFURL);
       end else begin
          if assigned(FPanel.Buffer) and not(FPanel.Buffer.Empty) then
            begin

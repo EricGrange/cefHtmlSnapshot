@@ -7,11 +7,11 @@ uses
    uCEFTypes, uCEFMiscFunctions;
 
 const
-   cChromiumSubFolder = 'Chromium88.2';
+   cChromiumSubFolder = 'Chromium89.15';
    cDLLSubfolder = 'Libraries';
 
 type
-   TSnapshotOutputFormat = ( sofUnknown, sofBMP, sofJPG, sofPNG, sofPDF );
+   TSnapshotOutputFormat = ( sofUnknown, sofBMP, sofJPG, sofPNG, sofPDF, sofPrinter );
 
    TSnapshotParameters = record
       ErrorText : String;        // if not empty, parsing ended up with errors
@@ -30,6 +30,7 @@ type
       Cookies : array of String;
       IgnoreCertificateErrors : Boolean;
       NoSandbox : Boolean;
+      Print : Boolean;
 
       procedure SaveBitmap(bmp : TBitmap);
       function URLSchemeDomain : String;
@@ -48,14 +49,15 @@ implementation
 uses LibTurboJPEG, Vcl.Imaging.pngimage, System.StrUtils;
 
 const
-   cHelp = 'cefHtmlSnaphot utility v0.3.88 - Html to image or pdf coversion using Chromium Embedded Framework'#10
-         + 'Using CEF 88.0.4324.150, CEF4Delphi, TurboJPEG see https://github.com/EricGrange/cefHtmlSnapshot'#10#10
+   cHelp = 'cefHtmlSnaphot utility v0.4.89 - Html to image or pdf coversion using Chromium Embedded Framework'#10
+         + 'Using CEF 89.0.15, CEF4Delphi, TurboJPEG see https://github.com/EricGrange/cefHtmlSnapshot'#10#10
          + 'cefHtmlSnapshot.exe url_or_file [-arg1 value1] [-arg2 value2] ... output_file'#10
          + #10
          + '  -?, -h, --help    This inline documentation'#10
          + '  url_or_file       URL of the website or file to be snapshotted (required)'#10
          + '                    If a .url file is specified, the URL will be read from it'#10
          + '  output_file       Output file pathname, extension determines format (default snapshot.bmp)'#10
+         + '                    If the printing mode is enabled, this is the name of the printer.'#10
          + #10
          + '  -w, --width       Width of the snapshot, between 1 and 2048 (default 1024)'#10
          + '  -h, --height      Height of the snapshot, between 1 and 2048 (default 768)'#10
@@ -85,6 +87,8 @@ const
          + '        margin-bottom   bottom margin in points (default 20)'#10
          + '        landscape       portait (default, 0) or landscape (1)'#10
          + '        backgrounds     enable backgrounds (1) or not (default, 0)'#10
+         + #10
+         + '  --print           If this option 1 then output_file is the name of a printer (by default 0)'#10
          ;
 
 // ParseCommandLineParameters
@@ -177,11 +181,7 @@ begin
    else if ext = '.png' then
       Result.OutputFormat := sofPNG
    else if ext = '.pdf' then
-      Result.OutputFormat := sofPDF
-   else begin
-      Result.ErrorText := 'Unsupported output file format "' + Result.OutputFilePath + '"';
-      Exit;
-   end;
+      Result.OutputFormat := sofPDF;
 
    // parse arguments in between
 
@@ -256,6 +256,12 @@ begin
 //      property scale_factor          : integer                 read Fscale_factor             write Fscale_factor          default 0;
 //      property header_footer_enabled : boolean                 read Fheader_footer_enabled    write Fheader_footer_enabled default False;
 //      property selection_only        : boolean                 read Fselection_only           write Fselection_only        default False;
+         end else if lastP = '-print' then begin
+            if p = '1' then begin
+               Result.Print := True;
+               Result.OutputFormat := sofPrinter;
+            end else if p <> '0' then
+               Result.ErrorText := 'Unsupported option "' + p + '" for print';
          end else begin
             Result.ErrorText := 'Unsupported parameter "' + p + '"';
          end;
@@ -266,7 +272,9 @@ begin
 
    if lastP <> '' then begin
       Result.ErrorText := 'Argument missing for parameter "' + lastP + '"';
-   end else if Result.URL = '' then begin
+   end else if Result.OutputFormat = sofUnknown then begin
+      Result.ErrorText := 'Unsupported output file format "' + Result.OutputFilePath + '"';
+   end else if (Result.URL = '') and not Result.Print then begin
       Result.ErrorText := 'Missing URL parameter, it is required';
    end;
 end;

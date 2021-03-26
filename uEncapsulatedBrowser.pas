@@ -68,7 +68,7 @@ type
       property ErrorText       : ustring    read FErrorText;
   end;
 
-procedure CreateGlobalCEFApp(const parameters : TSnapshotParameters; const chromiumPath : String = '');
+function CreateGlobalCEFApp(const parameters : TSnapshotParameters; const chromiumPath : String = '') : Boolean;
 function  WaitForMainAppEvent : boolean;
 procedure WriteResult;
 
@@ -111,7 +111,7 @@ begin
       WriteLn('Snapshot saved successfully as ' + EncapsulatedBrowser.Parameters.OutputFilePath);
 end;
 
-procedure CreateGlobalCEFApp(const parameters : TSnapshotParameters; const chromiumPath : String = '');
+function CreateGlobalCEFApp(const parameters : TSnapshotParameters; const chromiumPath : String = '') : Boolean;
 begin
    GlobalCEFApp                            := TCefApplication.Create;
    GlobalCEFApp.WindowlessRenderingEnabled := True;
@@ -135,6 +135,7 @@ begin
    GlobalCEFApp.EnableUsermediaScreenCapturing := False;
    GlobalCEFApp.EnablePrintPreview := False;
    GlobalCEFApp.DisableJavascriptAccessClipboard := True;
+   GlobalCEFApp.DisableJavascriptDomPaste := True;
    GlobalCEFApp.DisableSpellChecking := True;
    GlobalCEFApp.MuteAudio := True;
    GlobalCEFApp.AllowFileAccessFromFiles := True;
@@ -148,7 +149,7 @@ begin
    GlobalCEFApp.PersistSessionCookies := False;
    GlobalCEFApp.PersistUserPreferences := False;
 
-   GlobalCEFApp.StartMainProcess;
+   Result := GlobalCEFApp.StartMainProcess;
 end;
 
 constructor TEncapsulatedBrowser.Create(const aParameters : TSnapshotParameters);

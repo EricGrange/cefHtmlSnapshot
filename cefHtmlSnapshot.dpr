@@ -59,7 +59,7 @@ uses
   {$ELSE}
   SysUtils,
   {$ENDIF }
-  uCEFApplication, uCEFApplicationCore,
+  uCEFApplication, uCEFApplicationCore, TypInfo, uCEFTypes,
   {$ifdef USE_BUNDLE} UChromiumBundle,{$endif}
   uEncapsulatedBrowser in 'uEncapsulatedBrowser.pas',
   uCEFBrowserThread in 'uCEFBrowserThread.pas',
@@ -139,12 +139,15 @@ begin
       try
          {$ifdef USE_BUNDLE}
          vChromiumBundleQuickCheck := True;
-         CreateGlobalCEFApp(parameters, ChromiumUnBundledPath);
+         if CreateGlobalCEFApp(parameters, ChromiumUnBundledPath) then begin
          {$else}
-         CreateGlobalCEFApp(parameters);
+         if CreateGlobalCEFApp(parameters) then begin
          {$endif}
-         if WaitForMainAppEvent then
-            WriteResult;
+            if WaitForMainAppEvent then
+               WriteResult;
+         end else begin
+            Writeln(GlobalCEFApp.LastErrorMessage);
+         end;
       except
          on E: Exception do
             Writeln(E.ClassName, ': ', E.Message);
