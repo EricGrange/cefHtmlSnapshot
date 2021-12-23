@@ -124,6 +124,8 @@ end;
 var
    parameters : TSnapshotParameters;
 begin
+   FormatSettings.DecimalSeparator := '.';
+
    if (ParamCount > 0) and (Copy(ParamStr(1), 1, 6) = '--type') then begin
       RunAsSubProcess;
       Exit;
