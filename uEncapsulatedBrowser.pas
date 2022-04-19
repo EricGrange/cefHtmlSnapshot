@@ -144,6 +144,7 @@ begin
    GlobalCEFApp.IgnoreCertificateErrors := parameters.IgnoreCertificateErrors;
    GlobalCEFApp.NoSandbox := parameters.NoSandbox;
 
+   GlobalCEFApp.DisableBackForwardCache := True;
    GlobalCEFApp.DeleteCache := True;
    GlobalCEFApp.DeleteCookies := True;
    GlobalCEFApp.PersistSessionCookies := False;
