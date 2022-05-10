@@ -25,7 +25,7 @@ cefHtmlSnapshot.exe url_or_file [-arg1 value1] [-arg2 value2] ... output_file
   -?, -h, --help    This inline documentation
   url_or_file       URL of the website or file to be snapshotted (required)
                     If a .url file is specified, the URL will be read from it
-  output_file       Output file pathname, extension determines format (default snapshot.bmp)
+  output_file       Output file pathname, extension determines format (default snapshot.jpg)
 
   -w, --width       Width of the snapshot, between 1 and 2048 (default 1024)
   -h, --height      Height of the snapshot, between 1 and 2048 (default 768)
