@@ -77,6 +77,8 @@ type
       FPendingResize         : boolean;
       FInitialized           : boolean;
       FSnapshot              : TBitmap;
+      FSnapshotText          : String;
+      FConsoleMessages       : TStringList;
       FOnSnapshotAvailable   : TNotifyEvent;
       FOnError               : TNotifyEvent;
       FErrorCode             : integer;
@@ -109,6 +111,8 @@ type
       procedure Browser_OnLoadError(Sender: TObject; const browser: ICefBrowser; const frame: ICefFrame; errorCode: Integer; const errorText, failedUrl: ustring);
       procedure Browser_OnLoadingStateChange(Sender: TObject; const browser: ICefBrowser; isLoading, canGoBack, canGoForward: Boolean);
       procedure Browser_OnPdfPrintFinished(Sender: TObject; aResultOK : boolean);
+      procedure Browser_OnConsoleMessage(Sender: TObject; const browser: ICefBrowser; level: TCefLogSeverity; const message, source: ustring; line: Integer; out Result: Boolean);
+      procedure Browser_OnTextResultAvailable(Sender: TObject; const aText : ustring);
 
       procedure DoOnError;
       procedure DoOnSnapshotAvailable;
@@ -193,27 +197,18 @@ begin
   FOnError               := nil;
   FClosing               := False;
   FSyncEvents            := False;
+  FConsoleMessages       := TStringList.Create;
 end;
 
 destructor TCEFBrowserThread.Destroy;
 begin
-  if (FBrowser <> nil) then
-    FreeAndNil(FBrowser);
-
-  if (FPanel <> nil) then
-    FreeAndNil(FPanel);
-
-  if (FPopUpBitmap <> nil) then
-    FreeAndNil(FPopUpBitmap);
-
-  if (FSnapshot <> nil) then
-    FreeAndNil(FSnapshot);
-
-  if (FResizeCS <> nil) then
-    FreeAndNil(FResizeCS);
-
-  if (FBrowserInfoCS <> nil) then
-    FreeAndNil(FBrowserInfoCS);
+  FreeAndNil(FBrowser);
+  FreeAndNil(FPanel);
+  FreeAndNil(FPopUpBitmap);
+  FreeAndNil(FSnapshot);
+  FreeAndNil(FResizeCS);
+  FreeAndNil(FBrowserInfoCS);
+  FreeAndNil(FConsoleMessages);
 
   inherited Destroy;
 end;
@@ -246,6 +241,8 @@ begin
   FBrowser.OnLoadError             := Browser_OnLoadError;
   FBrowser.OnLoadingStateChange    := Browser_OnLoadingStateChange;
   FBrowser.OnPdfPrintFinished      := Browser_OnPdfPrintFinished;
+  FBrowser.OnConsoleMessage        := Browser_OnConsoleMessage;
+  FBrowser.OnTextResultAvailable   := Browser_OnTextResultAvailable;
 end;
 
 function TCEFBrowserThread.GetErrorCode : integer;
@@ -360,11 +357,14 @@ begin
       try
         FBrowserInfoCS.Acquire;
 
-        if assigned(FSnapshot) and not(FSnapshot.Empty) then
-          begin
-            FParameters.SaveBitmap(FSnapshot);
-            Result := True;
-          end;
+        if FParameters.OutputFormat = sofTXT then begin
+           FParameters.SaveText(FSnapshotText);
+        end else begin
+           if assigned(FSnapshot) and not(FSnapshot.Empty) then begin
+               FParameters.SaveBitmap(FSnapshot);
+               Result := True;
+           end;
+        end;
       except
         on e : exception do
           if CustomExceptionHandler('TCEFBrowserThread.SaveSnapshotToFile', e) then raise;
@@ -632,6 +632,31 @@ begin
         DoOnSnapshotAvailable;
 end;
 
+// Browser_OnConsoleMessage
+//
+procedure TCEFBrowserThread.Browser_OnConsoleMessage(Sender: TObject; const browser: ICefBrowser; level: TCefLogSeverity; const message, source: ustring; line: Integer; out Result: Boolean);
+begin
+   if FBrowserInfoCS = nil then Exit;
+   FBrowserInfoCS.Acquire;
+   try
+      FConsoleMessages.Add(message);
+   finally
+      FBrowserInfoCS.Release;
+   end;
+end;
+
+// Browser_OnTextResultAvailable
+//
+procedure TCEFBrowserThread.Browser_OnTextResultAvailable(Sender: TObject; const aText : ustring);
+begin
+   FSnapshotText := aText;
+   if assigned(FOnSnapshotAvailable) then
+      if FSyncEvents then
+        Synchronize(DoOnSnapshotAvailable)
+       else
+        DoOnSnapshotAvailable;
+end;
+
 procedure TCEFBrowserThread.Resize;
 begin
   if FClosing or Terminated or not(Initialized) then exit;
@@ -761,7 +786,7 @@ begin
 
       if FPaintedAfterRepaintrequest then begin
          if TakeSnapshot and assigned(FOnSnapshotAvailable) then begin
-            if FParameters.OutputFormat <> sofPDF then begin
+            if not (FParameters.OutputFormat in [ sofPDF, sofTXT, sofPrinter ]) then begin
                if FSyncEvents then
                   Synchronize(DoOnSnapshotAvailable)
                else
@@ -804,23 +829,41 @@ begin
     try
       FBrowserInfoCS.Acquire;
 
-      if FParameters.OutputFormat in [ sofPDF, sofPrinter ] then begin
-         FBrowser.PDFPrintOptions.page_width := FParameters.PDFOptions.page_width;
-         FBrowser.PDFPrintOptions.page_height := FParameters.PDFOptions.page_height;
-         FBrowser.PDFPrintOptions.margin_type := FParameters.PDFOptions.margin_type;
-         FBrowser.PDFPrintOptions.margin_top := FParameters.PDFOptions.margin_top;
-         FBrowser.PDFPrintOptions.margin_left := FParameters.PDFOptions.margin_left;
-         FBrowser.PDFPrintOptions.margin_right := FParameters.PDFOptions.margin_right;
-         FBrowser.PDFPrintOptions.margin_bottom := FParameters.PDFOptions.margin_bottom;
-         if FParameters.Scale <> 1 then
-            FBrowser.PDFPrintOptions.scale_factor := Round(FParameters.Scale * 100);
-         FBrowser.PDFPrintOptions.landscape := FParameters.PDFOptions.landscape <> 0;
-         FBrowser.PDFPrintOptions.header_footer_enabled := (FParameters.PDFTitle <> '') or (FParameters.PDFURL <> '');
-         FBrowser.PDFPrintOptions.backgrounds_enabled := FParameters.PDFOptions.backgrounds_enabled <> 0;
-         if FParameters.Print then
-            FBrowser.Print
-         else FBrowser.PrintToPDF(FParameters.OutputFilePath, FParameters.PDFTitle, FParameters.PDFURL);
-      end else begin
+      case FParameters.OutputFormat of
+         sofPDF, sofPrinter : begin
+            FBrowser.PDFPrintOptions.page_width := FParameters.PDFOptions.page_width;
+            FBrowser.PDFPrintOptions.page_height := FParameters.PDFOptions.page_height;
+            FBrowser.PDFPrintOptions.margin_type := FParameters.PDFOptions.margin_type;
+            FBrowser.PDFPrintOptions.margin_top := FParameters.PDFOptions.margin_top;
+            FBrowser.PDFPrintOptions.margin_left := FParameters.PDFOptions.margin_left;
+            FBrowser.PDFPrintOptions.margin_right := FParameters.PDFOptions.margin_right;
+            FBrowser.PDFPrintOptions.margin_bottom := FParameters.PDFOptions.margin_bottom;
+            if FParameters.Scale <> 1 then
+               FBrowser.PDFPrintOptions.scale_factor := Round(FParameters.Scale * 100);
+            FBrowser.PDFPrintOptions.landscape := FParameters.PDFOptions.landscape <> 0;
+            FBrowser.PDFPrintOptions.header_footer_enabled := (FParameters.PDFTitle <> '') or (FParameters.PDFURL <> '');
+            FBrowser.PDFPrintOptions.backgrounds_enabled := FParameters.PDFOptions.backgrounds_enabled <> 0;
+            if FParameters.Print then
+               FBrowser.Print
+            else FBrowser.PrintToPDF(FParameters.OutputFilePath, FParameters.PDFTitle, FParameters.PDFURL);
+         end;
+         sofTXT : begin
+            case FParameters.TextSource of
+               stsHTML : FBrowser.RetrieveHTML();
+               stsConsole : begin
+                  FBrowserInfoCS.Acquire;
+                  try
+                     FSnapshotText := FConsoleMessages.Text;
+                  finally
+                     FBrowserInfoCS.Release;
+                  end;
+                  Browser_OnTextResultAvailable(Self, FSnapshotText);
+               end;
+            else
+               FBrowser.RetrieveText();
+            end;
+         end;
+      else
          if assigned(FPanel.Buffer) and not(FPanel.Buffer.Empty) then
            begin
              if (FSnapshot = nil) then
