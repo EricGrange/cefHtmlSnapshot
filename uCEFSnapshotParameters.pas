@@ -73,7 +73,8 @@ const
          + '  -?, -h, --help    This inline documentation'#10
          + '  url_or_file       URL of the website or file to be snapshotted (required)'#10
          + '                    If a .url file is specified, the URL will be read from it'#10
-         + '  output_file       Output file pathname, extension determines format (default snapshot.bmp)'#10
+         + '  output_file       Output file pathname, extension determines format (default snapshot.jpg)'#10
+         + '                    Supported formats are pdf, jpg, png, bmp & txt.'#10
          + '                    If the printing mode is enabled, this is the name of the printer.'#10
          + #10
          + '  -w, --width       Width of the snapshot, between 1 and 2048 (default 1024)'#10
