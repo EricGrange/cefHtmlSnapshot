@@ -57,7 +57,7 @@ cefHtmlSnapshot.exe url_or_file [-arg1 value1] [-arg2 value2] ... output_file
         landscape       portait (default, 0) or landscape (1)
         backgrounds     enable backgrounds (1) or not (default, 0)
 		
-  --text            Specifies the source of text for .txt output, accepted values'#10
+  --text            Specifies the source of text for .txt output, accepted values
                         text (default)
                         html
                         console
