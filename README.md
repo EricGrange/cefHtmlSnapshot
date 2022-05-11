@@ -61,6 +61,7 @@ cefHtmlSnapshot.exe url_or_file [-arg1 value1] [-arg2 value2] ... output_file
                         text (default)
                         html
                         console
+  --frame	        Specifies the name of the frame for text our html output (by default main frame)
 		
 ```
 
