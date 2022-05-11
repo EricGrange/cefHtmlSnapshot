@@ -358,7 +358,7 @@ begin
         FBrowserInfoCS.Acquire;
 
         if FParameters.OutputFormat = sofTXT then begin
-           FParameters.SaveText(FSnapshotText);
+           Result := FParameters.SaveText(FSnapshotText);
         end else begin
            if assigned(FSnapshot) and not(FSnapshot.Empty) then begin
                FParameters.SaveBitmap(FSnapshot);
@@ -849,7 +849,7 @@ begin
          end;
          sofTXT : begin
             case FParameters.TextSource of
-               stsHTML : FBrowser.RetrieveHTML();
+               stsHTML : FBrowser.RetrieveHTML(FParameters.TextFrame);
                stsConsole : begin
                   FBrowserInfoCS.Acquire;
                   try
@@ -860,7 +860,7 @@ begin
                   Browser_OnTextResultAvailable(Self, FSnapshotText);
                end;
             else
-               FBrowser.RetrieveText();
+               FBrowser.RetrieveText(FParameters.TextFrame);
             end;
          end;
       else

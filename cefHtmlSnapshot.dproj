@@ -89,14 +89,14 @@
         <DCC_Optimize>true</DCC_Optimize>
         <DCC_GenerateStackFrames>false</DCC_GenerateStackFrames>
         <DCC_MapFile>3</DCC_MapFile>
-        <Debugger_RunParams>https://www.google.com test\test1.pdf</Debugger_RunParams>
+        <Debugger_RunParams>D:\GC\cefHtmlSnapshot\test\report_4.mhtml test\snapshot4.txt</Debugger_RunParams>
         <DCC_DebugInfoInTds>true</DCC_DebugInfoInTds>
         <Icon_MainIcon>cefHtmlSnapshot_Icon.ico</Icon_MainIcon>
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
         <VerInfo_MajorVer>0</VerInfo_MajorVer>
-        <VerInfo_MinorVer>7</VerInfo_MinorVer>
-        <VerInfo_Keys>CompanyName=delphitools.info;FileDescription=$(MSBuildProjectName);FileVersion=0.7.100.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
-        <VerInfo_Release>100</VerInfo_Release>
+        <VerInfo_MinorVer>8</VerInfo_MinorVer>
+        <VerInfo_Keys>CompanyName=delphitools.info;FileDescription=$(MSBuildProjectName);FileVersion=0.8.101.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
+        <VerInfo_Release>101</VerInfo_Release>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2)'!=''">
         <DCC_LocalDebugSymbols>false</DCC_LocalDebugSymbols>

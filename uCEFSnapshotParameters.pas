@@ -7,7 +7,7 @@ uses
    uCEFTypes, uCEFMiscFunctions;
 
 const
-   cChromiumSubFolder = 'Chromium100.0';
+   cChromiumSubFolder = 'Chromium101.0';
    cDLLSubfolder = 'Libraries';
 
 type
@@ -18,7 +18,7 @@ type
       sofPNG,        // PNG
       sofPDF,        // PDF
       sofPrinter,    // sent to printer
-      sofTXT         // Text, affected by
+      sofTXT         // Text, affected by TSnapshotTextSource
    );
 
    TSnapshotTextSource = (
@@ -41,6 +41,7 @@ type
       PDFOptions : TCefPdfPrintSettings;
       PDFTitle, PDFURL : String;
       TextSource : TSnapshotTextSource;
+      TextFrame : String;
       JavaScript : String;
       Cookies : array of String;
       IgnoreCertificateErrors : Boolean;
@@ -48,7 +49,7 @@ type
       Print : Boolean;
 
       procedure SaveBitmap(bmp : TBitmap);
-      procedure SaveText(const txt : String);
+      function SaveText(const txt : String) : Boolean;
 
       function URLSchemeDomain : String;
    end;
@@ -65,6 +66,13 @@ implementation
 
 uses LibTurboJPEG, Vcl.Imaging.pngimage, System.StrUtils, System.IOUtils;
 
+// SaveText
+//
+      function SaveText(const txt : String) : Boolean;
+begin
+
+end;
+
 const
    cHelp = 'cefHtmlSnaphot utility v0.7.100 - Html to image or pdf coversion using Chromium Embedded Framework'#10
          + 'Using CEF 100.0.23, CEF4Delphi, TurboJPEG see https://github.com/EricGrange/cefHtmlSnapshot'#10#10
@@ -74,7 +82,7 @@ const
          + '  url_or_file       URL of the website or file to be snapshotted (required)'#10
          + '                    If a .url file is specified, the URL will be read from it'#10
          + '  output_file       Output file pathname, extension determines format (default snapshot.jpg)'#10
-         + '                    Supported formats are pdf, jpg, png, bmp & txt.'#10
+         + '                    Supported formats are pdf, jpg, png, bmp, htm & txt.'#10
          + '                    If the printing mode is enabled, this is the name of the printer.'#10
          + #10
          + '  -w, --width       Width of the snapshot, between 1 and 2048 (default 1024)'#10
@@ -112,6 +120,7 @@ const
          + '                        text (default)'#10
          + '                        html'#10
          + '                        console'#10
+         + '  --frame           Specifies the name of the frame for text our html output (by default main frame)'#10
          ;
 
 // ParseCommandLineParameters
@@ -206,7 +215,11 @@ begin
    else if ext = '.pdf' then
       Result.OutputFormat := sofPDF
    else if ext = '.txt' then
+      Result.OutputFormat := sofTXT
+   else if ext = '.htm' then begin
       Result.OutputFormat := sofTXT;
+      Result.TextSource := stsHTML;
+   end;
 
    // parse arguments in between
 
@@ -295,6 +308,8 @@ begin
             else if p = 'console' then
                Result.TextSource := stsConsole
             else Result.ErrorText := 'Unsupported option "' + p + '" for text';
+         end else if lastP = '-frame' then begin
+            Result.TextFrame := p;
          end else begin
             Result.ErrorText := 'Unsupported parameter "' + p + '"';
          end;
@@ -383,9 +398,14 @@ end;
 
 // SaveText
 //
-procedure TSnapshotParameters.SaveText(const txt : String);
+function TSnapshotParameters.SaveText(const txt : String) : Boolean;
 begin
-   TFile.WriteAllText(OutputFilePath, txt);
+   try
+      TFile.WriteAllText(OutputFilePath, txt);
+      Result := True;
+   except
+      Result := False;
+   end;
 end;
 
 // URLSchemeDomain
