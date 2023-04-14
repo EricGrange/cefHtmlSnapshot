@@ -112,13 +112,14 @@ uses
 
 procedure RunAsSubProcess;
 begin
-  GlobalCEFApp                            := TCefApplicationCore.Create;
-  GlobalCEFApp.WindowlessRenderingEnabled := True;
-  GlobalCEFApp.EnableHighDPISupport       := True;
-  GlobalCEFApp.ShowMessageDlg             := False;
-  GlobalCEFApp.BlinkSettings              := 'hideScrollbars';
-  GlobalCEFApp.StartSubProcess;
-  DestroyGlobalCEFApp;
+   GlobalCEFApp                            := TCefApplicationCore.Create;
+   GlobalCEFApp.WindowlessRenderingEnabled := True;
+   GlobalCEFApp.ShowMessageDlg             := False;
+   GlobalCEFApp.BlinkSettings              := 'hideScrollbars';
+   GlobalCEFApp.NoSandbox                  := False;
+
+   GlobalCEFApp.StartSubProcess;
+   DestroyGlobalCEFApp;
 end;
 
 var
@@ -155,6 +156,7 @@ begin
             Writeln(E.ClassName, ': ', E.Message);
       end;
    finally
-      DestroyGlobalCEFApp;
+      // just let windows kill the subprocess, it's dirty but faster
+      // DestroyGlobalCEFApp;
    end;
 end.

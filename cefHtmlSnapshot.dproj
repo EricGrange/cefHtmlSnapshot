@@ -89,7 +89,7 @@
         <DCC_Optimize>true</DCC_Optimize>
         <DCC_GenerateStackFrames>false</DCC_GenerateStackFrames>
         <DCC_MapFile>3</DCC_MapFile>
-        <Debugger_RunParams>D:\GC\cefHtmlSnapshot\test\report_4.mhtml test\snapshot4.txt</Debugger_RunParams>
+        <Debugger_RunParams>D:\GC\cefHtmlSnapshot\test\report_4.mhtml test\snapshot4.bmp</Debugger_RunParams>
         <DCC_DebugInfoInTds>true</DCC_DebugInfoInTds>
         <Icon_MainIcon>cefHtmlSnapshot_Icon.ico</Icon_MainIcon>
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
@@ -97,6 +97,8 @@
         <VerInfo_MinorVer>8</VerInfo_MinorVer>
         <VerInfo_Keys>CompanyName=delphitools.info;FileDescription=$(MSBuildProjectName);FileVersion=0.8.104.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
         <VerInfo_Release>104</VerInfo_Release>
+        <PostBuildEvent><![CDATA["C:\Program Files (x86)\Windows Kits\10\bin\10.0.19041.0\x64\signtool.exe" sign /n "Eric Grange" /tr http://timestamp.sectigo.com?td=sha256 /du https://delphitools.info/ /fd sha256 /td sha256 /v $(OUTPUTPATH)
+$(PostBuildEvent)]]></PostBuildEvent>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2)'!=''">
         <DCC_LocalDebugSymbols>false</DCC_LocalDebugSymbols>
@@ -935,4 +937,12 @@
     <Import Project="$(BDS)\Bin\CodeGear.Delphi.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Delphi.Targets')"/>
     <Import Project="$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\$(PRODUCTVERSION)\UserTools.proj" Condition="Exists('$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\$(PRODUCTVERSION)\UserTools.proj')"/>
     <Import Project="$(MSBuildProjectName).deployproj" Condition="Exists('$(MSBuildProjectName).deployproj')"/>
+    <PropertyGroup Condition="'$(Config)'=='Debug' And '$(Platform)'=='Win32'">
+        <PreBuildEvent/>
+        <PreBuildEventIgnoreExitCode>False</PreBuildEventIgnoreExitCode>
+        <PreLinkEvent/>
+        <PreLinkEventIgnoreExitCode>False</PreLinkEventIgnoreExitCode>
+        <PostBuildEvent>&quot;C:\Program Files (x86)\Windows Kits\10\bin\10.0.19041.0\x64\signtool.exe&quot; sign /n &quot;Eric Grange&quot; /tr http://timestamp.sectigo.com?td=sha256 /du https://delphitools.info/ /fd sha256 /td sha256 /v $(OUTPUTPATH)</PostBuildEvent>
+        <PostBuildEventIgnoreExitCode>False</PostBuildEventIgnoreExitCode>
+    </PropertyGroup>
 </Project>

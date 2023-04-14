@@ -115,7 +115,6 @@ function CreateGlobalCEFApp(const parameters : TSnapshotParameters; const chromi
 begin
    GlobalCEFApp                            := TCefApplication.Create;
    GlobalCEFApp.WindowlessRenderingEnabled := True;
-   GlobalCEFApp.EnableHighDPISupport       := True;
    GlobalCEFApp.ShowMessageDlg             := False;                    // This demo shouldn't show any window, just console messages.
    GlobalCEFApp.BlinkSettings              :=
         'hideScrollbars=true'            // This setting removes all scrollbars to capture a cleaner snapshot
@@ -149,6 +148,8 @@ begin
    GlobalCEFApp.DeleteCookies := True;
    GlobalCEFApp.PersistSessionCookies := False;
    GlobalCEFApp.PersistUserPreferences := False;
+   GlobalCEFApp.FastUnload := True;
+   GlobalCEFApp.ReRaiseExceptions := False;
 
    Result := GlobalCEFApp.StartMainProcess;
 end;

@@ -7,7 +7,7 @@ uses
    uCEFTypes, uCEFMiscFunctions;
 
 const
-   cChromiumSubFolder = 'Chromium104.0';
+   cChromiumSubFolder = 'Chromium112.0';
    cDLLSubfolder = 'Libraries';
 
 type
@@ -116,6 +116,9 @@ const
          + '  --frame           Specifies the name of the frame for text our html output (by default main frame)'#10
          ;
 
+   cMicronsToInches = 1 / 25400;
+   cPointsToInches = 1 / 72;
+
 // ParseCommandLineParameters
 //
 function ParseCommandLineParameters : TSnapshotParameters;
@@ -134,6 +137,24 @@ function ParseCommandLineParameters : TSnapshotParameters;
       if (value < mini) or (value > maxi) then begin
          Result := 'Invalid ' + name + ' value: "' + p + '"';
       end else Result := '';
+   end;
+
+   function TryParseFloatMicronsToInchesParameter(const name, p : String; var value : Double; mini, maxi : Double) : String;
+   begin
+      value := StrToFloatDef(p, mini-1);
+      if (value < mini) or (value > maxi) then begin
+         Result := 'Invalid ' + name + ' value: "' + p + '"';
+      end else Result := '';
+      value := value * cMicronsToInches;
+   end;
+
+   function TryParseFloatPointsToInchesParameter(const name, p : String; var value : Double; mini, maxi : Double) : String;
+   begin
+      value := StrToFloatDef(p, mini-1);
+      if (value < mini) or (value > maxi) then begin
+         Result := 'Invalid ' + name + ' value: "' + p + '"';
+      end else Result := '';
+      value := value * cPointsToInches;
    end;
 
    function URLFromURLFile(const fileName : String) : String;
@@ -163,15 +184,15 @@ begin
    Result.JPEGQuality := 90;
    Result.PNGCompressionLevel := 7;
 
-   Result.PDFOptions.page_width := 210000;
-   Result.PDFOptions.page_height := 297000;
+   Result.PDFOptions.paper_width := 210000 * cMicronsToInches;
+   Result.PDFOptions.paper_height := 297000 * cMicronsToInches;
    Result.PDFOptions.margin_type := PDF_PRINT_MARGIN_CUSTOM;
-   Result.PDFOptions.margin_top := 20;
-   Result.PDFOptions.margin_left := 20;
-   Result.PDFOptions.margin_right := 20;
-   Result.PDFOptions.margin_bottom := 20;
+   Result.PDFOptions.margin_top := 20 * cPointsToInches;
+   Result.PDFOptions.margin_left := 20 * cPointsToInches;
+   Result.PDFOptions.margin_right := 20 * cPointsToInches;
+   Result.PDFOptions.margin_bottom := 20 * cPointsToInches;
    Result.PDFOptions.landscape := 0;
-   Result.PDFOptions.backgrounds_enabled := 0;
+   Result.PDFOptions.print_background := 0;
 
    if ParamCount < 2 then begin
       Result.ErrorText := cHelp;
@@ -260,22 +281,22 @@ begin
             else if p <> '0' then
                Result.ErrorText := 'Unsupported option "' + p + '" for no-sandbox';
          end else if lastP = '-pdf-page-width' then begin
-            Result.ErrorText := TryParseIntegerParameter('PDF-page-width', p, Result.PDFOptions.page_width, 10000, 10000000);
+            Result.ErrorText := TryParseFloatMicronsToInchesParameter('PDF-page-width', p, Result.PDFOptions.paper_width, 10000, 10000000);
          end else if lastP = '-pdf-page-height' then begin
-            Result.ErrorText := TryParseIntegerParameter('PDF-page-height', p, Result.PDFOptions.page_height, 10000, 10000000);
+            Result.ErrorText := TryParseFloatMicronsToInchesParameter('PDF-page-height', p, Result.PDFOptions.paper_height, 10000, 10000000);
          end else if lastP = '-pdf-margins' then begin
-            Result.ErrorText := TryParseIntegerParameter('PDF-margins', p, Result.PDFOptions.margin_top, 0, 10000);
+            Result.ErrorText := TryParseFloatPointsToInchesParameter('PDF-margins', p, Result.PDFOptions.margin_top, 0, 10000);
             Result.PDFOptions.margin_left := Result.PDFOptions.margin_top;
             Result.PDFOptions.margin_right := Result.PDFOptions.margin_top;
             Result.PDFOptions.margin_bottom := Result.PDFOptions.margin_top;
          end else if lastP = '-pdf-margin-top' then begin
-            Result.ErrorText := TryParseIntegerParameter('PDF-margin-top', p, Result.PDFOptions.margin_top, 0, 10000);
+            Result.ErrorText := TryParseFloatPointsToInchesParameter('PDF-margin-top', p, Result.PDFOptions.margin_top, 0, 10000);
          end else if lastP = '-pdf-margin-left' then begin
-            Result.ErrorText := TryParseIntegerParameter('PDF-margin-left', p, Result.PDFOptions.margin_left, 0, 10000);
+            Result.ErrorText := TryParseFloatPointsToInchesParameter('PDF-margin-left', p, Result.PDFOptions.margin_left, 0, 10000);
          end else if lastP = '-pdf-margin-right' then begin
-            Result.ErrorText := TryParseIntegerParameter('PDF-margin-right', p, Result.PDFOptions.margin_right, 0, 10000);
+            Result.ErrorText := TryParseFloatPointsToInchesParameter('PDF-margin-right', p, Result.PDFOptions.margin_right, 0, 10000);
          end else if lastP = '-pdf-margin-bottom' then begin
-            Result.ErrorText := TryParseIntegerParameter('PDF-margin-bottom', p, Result.PDFOptions.margin_bottom, 0, 10000);
+            Result.ErrorText := TryParseFloatPointsToInchesParameter('PDF-margin-bottom', p, Result.PDFOptions.margin_bottom, 0, 10000);
          end else if lastP = '-pdf-landscape' then begin
             Result.ErrorText := TryParseIntegerParameter('PDF-landscape', p, Result.PDFOptions.landscape, 0, 1);
          end else if lastP = '-pdf-title' then begin
@@ -283,7 +304,7 @@ begin
          end else if lastP = '-pdf-url' then begin
             Result.PDFURL := p;        // undocumented, does not seem to work
          end else if lastP = '-pdf-backgrounds' then begin
-            Result.ErrorText := TryParseIntegerParameter('PDF-backgrounds', p, Result.PDFOptions.backgrounds_enabled, 0, 1);
+            Result.ErrorText := TryParseIntegerParameter('PDF-backgrounds', p, Result.PDFOptions.print_background, 0, 1);
 //      property scale_factor          : integer                 read Fscale_factor             write Fscale_factor          default 0;
 //      property header_footer_enabled : boolean                 read Fheader_footer_enabled    write Fheader_footer_enabled default False;
 //      property selection_only        : boolean                 read Fselection_only           write Fselection_only        default False;

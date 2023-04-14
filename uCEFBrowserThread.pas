@@ -47,15 +47,13 @@ uses
   {$ELSE}
   Windows, Messages, SysUtils, Classes, Graphics, SyncObjs, Math,
   {$ENDIF}
-  uCEFChromium, uCEFTypes, uCEFInterfaces, uCEFConstants, uCEFBufferPanel,
-  uCEFChromiumCore, uCEFMiscFunctions, uCEFSnapshotParameters;
+  uCEFChromium, uCEFTypes, uCEFInterfaces, uCEFConstants,
+  uCEFBrowserBitmap, uCEFChromiumCore, uCEFMiscFunctions, uCEFSnapshotParameters;
 
 type
-  TVirtualBufferPanel = class(TBufferPanel)
+  TVirtualBrowserBitmap = class(TCEFBrowserBitmap)
     protected
       FCustomScale : single;
-
-      function GetScreenScale : single; override;
 
     public
       property CustomScale : single read FCustomScale write FCustomScale;
@@ -64,8 +62,8 @@ type
   TCEFBrowserThread = class(TThread)
     protected
       FBrowser               : TChromium;
-      FPanel                 : TVirtualBufferPanel;
-      FPanelSize             : TSize;
+      FBrowserBitmap         : TVirtualBrowserBitmap;
+      FBrowserSize           : TSize;
       FParameters            : TSnapshotParameters;
       FPopUpBitmap           : TBitmap;
       FPopUpRect             : TRect;
@@ -76,7 +74,6 @@ type
       FResizing              : boolean;
       FPendingResize         : boolean;
       FInitialized           : boolean;
-      FSnapshot              : TBitmap;
       FSnapshotText          : String;
       FConsoleMessages       : TStringList;
       FOnSnapshotAvailable   : TNotifyEvent;
@@ -96,8 +93,6 @@ type
       function  GetInitialized : boolean;
 
       procedure SetErrorText(const aValue : ustring);
-
-      procedure Panel_OnResize(Sender: TObject);
 
       procedure Browser_OnAfterCreated(Sender: TObject; const browser: ICefBrowser);
       procedure Browser_OnPaint(Sender: TObject; const browser: ICefBrowser; kind: TCefPaintElementType; dirtyRectsCount: NativeUInt; const dirtyRects: PCefRectArray; const buffer: Pointer; aWidth, aHeight: Integer);
@@ -161,16 +156,6 @@ const
   CEF_SNAPSHOT_TIMER_MSG   = WM_APP + 5;
 
 // *************************************
-// ******** TVirtualBufferPanel ********
-// *************************************
-
-function TVirtualBufferPanel.GetScreenScale : single;
-begin
-  Result := FCustomScale;
-end;
-
-
-// *************************************
 // ********* TCEFBrowserThread *********
 // *************************************
 
@@ -181,9 +166,9 @@ begin
   FreeOnTerminate        := False;
   FInitialized           := False;
   FBrowser               := nil;
-  FPanel                 := nil;
-  FPanelSize.cx          := parameters.Width;
-  FPanelSize.cy          := parameters.Height;
+  FBrowserBitmap         := nil;
+  FBrowserSize.cx        := parameters.Width;
+  FBrowserSize.cy        := parameters.Height;
   FParameters            := parameters;
   FPopUpBitmap           := nil;
   FPopUpRect             := rect(0, 0, 0, 0);
@@ -192,7 +177,6 @@ begin
   FPendingResize         := False;
   FResizeCS              := nil;
   FBrowserInfoCS         := nil;
-  FSnapshot              := nil;
   FOnSnapshotAvailable   := nil;
   FOnError               := nil;
   FClosing               := False;
@@ -203,9 +187,8 @@ end;
 destructor TCEFBrowserThread.Destroy;
 begin
   FreeAndNil(FBrowser);
-  FreeAndNil(FPanel);
+  FreeAndNil(FBrowserBitmap);
   FreeAndNil(FPopUpBitmap);
-  FreeAndNil(FSnapshot);
   FreeAndNil(FResizeCS);
   FreeAndNil(FBrowserInfoCS);
   FreeAndNil(FConsoleMessages);
@@ -220,11 +203,11 @@ begin
   FResizeCS      := TCriticalSection.Create;
   FBrowserInfoCS := TCriticalSection.Create;
 
-  FPanel             := TVirtualBufferPanel.Create(nil);
-  FPanel.CustomScale := FParameters.Scale;
-  FPanel.Width       := FPanelSize.cx;
-  FPanel.Height      := FPanelSize.cy;
-  FPanel.OnResize    := Panel_OnResize;
+  FBrowserBitmap             := TVirtualBrowserBitmap.Create;
+  FBrowserBitmap.CustomScale := FParameters.Scale;
+  FBrowserBitmap.PixelFormat := pf32bit;
+  FBrowserBitmap.HandleType  := bmDIB;
+  FBrowserBitmap.SetSize(FBrowserSize.cx, FBrowserSize.cy);
 
   FBrowser                         := TChromium.Create(nil);
   FBrowser.DefaultURL              := FParameters.URL;
@@ -319,7 +302,7 @@ begin
       try
         FBrowserInfoCS.Acquire;
 
-        if assigned(FSnapshot) and not(FSnapshot.Empty) then
+        if assigned(FBrowserBitmap) and not(FBrowserBitmap.Empty) then
           begin
             if (aSnapshot = nil) then
               begin
@@ -328,13 +311,13 @@ begin
                 aSnapshot.HandleType  := bmDIB;
               end;
 
-            if (aSnapshot.Width <> FSnapshot.Width) then
-              aSnapshot.Width := FSnapshot.Width;
+            if (aSnapshot.Width <> FBrowserBitmap.Width) then
+              aSnapshot.Width := FBrowserBitmap.Width;
 
-            if (aSnapshot.Height <> FSnapshot.Height) then
-              aSnapshot.Height := FSnapshot.Height;
+            if (aSnapshot.Height <> FBrowserBitmap.Height) then
+              aSnapshot.Height := FBrowserBitmap.Height;
 
-            aSnapshot.Canvas.Draw(0, 0, FSnapshot);
+            aSnapshot.Canvas.Draw(0, 0, FBrowserBitmap);
             Result := True;
           end;
       except
@@ -360,8 +343,8 @@ begin
         if FParameters.OutputFormat = sofTXT then begin
            Result := FParameters.SaveText(FSnapshotText);
         end else begin
-           if assigned(FSnapshot) and not(FSnapshot.Empty) then begin
-               FParameters.SaveBitmap(FSnapshot);
+           if assigned(FBrowserBitmap) and not(FBrowserBitmap.Empty) then begin
+               FParameters.SaveBitmap(FBrowserBitmap);
                Result := True;
            end;
         end;
@@ -394,11 +377,6 @@ begin
             PostThreadMessage(ThreadID, CEF_CLOSE_BROWSER_MSG, 0, 0);
 end;
 
-procedure TCEFBrowserThread.Panel_OnResize(Sender: TObject);
-begin
-  Resize;
-end;
-
 procedure TCEFBrowserThread.Browser_OnAfterCreated(Sender: TObject; const browser: ICefBrowser);
 begin
   if assigned(FBrowserInfoCS) then
@@ -424,12 +402,12 @@ var
 begin
    if FFullRepaintRequested then
       FPaintedAfterRepaintrequest := True;
-  if assigned(FResizeCS) and assigned(FPanel) then
+  if assigned(FResizeCS) and assigned(FBrowserBitmap) then
     try
       FResizeCS.Acquire;
       TempForcedResize := False;
 
-      if FPanel.BeginBufferDraw then
+      if FBrowserBitmap.BeginBufferDraw then
         begin
           if (kind = PET_POPUP) then
             begin
@@ -453,11 +431,11 @@ begin
             end
            else
             begin
-              TempForcedResize := FPanel.UpdateBufferDimensions(aWidth, aHeight) or not(FPanel.BufferIsResized(False));
-              TempWidth        := FPanel.BufferWidth;
-              TempHeight       := FPanel.BufferHeight;
-              TempScanlineSize := FPanel.ScanlineSize;
-              TempBufferBits   := FPanel.BufferBits;
+              TempForcedResize := FBrowserBitmap.UpdateBufferDimensions(aWidth, aHeight) or not(FBrowserBitmap.BufferIsResized(False));
+              TempWidth        := FBrowserBitmap.Width;
+              TempHeight       := FBrowserBitmap.Height;
+              TempScanlineSize := FBrowserBitmap.ScanlineSize;
+              TempBufferBits   := FBrowserBitmap.BufferBits;
             end;
 
           if (TempBufferBits <> nil) and FFullRepaintRequested then
@@ -505,11 +483,11 @@ begin
                                       min(FPopUpRect.Right  - FPopUpRect.Left, FPopUpBitmap.Width),
                                       min(FPopUpRect.Bottom - FPopUpRect.Top,  FPopUpBitmap.Height));
 
-                  FPanel.BufferDraw(FPopUpBitmap, TempSrcRect, FPopUpRect);
+                  FBrowserBitmap.BufferDraw(FPopUpBitmap, TempSrcRect, FPopUpRect);
                 end;
             end;
 
-          FPanel.EndBufferDraw;
+          FBrowserBitmap.EndBufferDraw;
 
           if (kind = PET_VIEW) then
             begin
@@ -527,12 +505,12 @@ end;
 
 procedure TCEFBrowserThread.Browser_OnGetViewRect(Sender: TObject; const browser: ICefBrowser; var rect: TCefRect);
 begin
-  if assigned(FPanel) then
+  if assigned(FBrowserBitmap) then
     begin
       rect.x      := 0;
       rect.y      := 0;
-      rect.width  := DeviceToLogical(FPanel.Width,  FParameters.Scale);
-      rect.height := DeviceToLogical(FPanel.Height, FParameters.Scale);
+      rect.width  := DeviceToLogical(FBrowserBitmap.Width,  FParameters.Scale);
+      rect.height := DeviceToLogical(FBrowserBitmap.Height, FParameters.Scale);
     end;
 end;
 
@@ -547,12 +525,12 @@ procedure TCEFBrowserThread.Browser_OnGetScreenInfo(Sender: TObject; const brows
 var
   TempRect : TCEFRect;
 begin
-  if assigned(FPanel) then
+  if assigned(FBrowserBitmap) then
     begin
       TempRect.x      := 0;
       TempRect.y      := 0;
-      TempRect.width  := DeviceToLogical(FPanel.Width,  FParameters.Scale);
-      TempRect.height := DeviceToLogical(FPanel.Height, FParameters.Scale);
+      TempRect.width  := DeviceToLogical(FBrowserBitmap.Width,  FParameters.Scale);
+      TempRect.height := DeviceToLogical(FBrowserBitmap.Height, FParameters.Scale);
 
       screenInfo.device_scale_factor := FParameters.Scale;
       screenInfo.depth               := 0;
@@ -661,14 +639,14 @@ procedure TCEFBrowserThread.Resize;
 begin
   if FClosing or Terminated or not(Initialized) then exit;
 
-  if assigned(FResizeCS) and assigned(FPanel) then
+  if assigned(FResizeCS) and assigned(FBrowserBitmap) then
     try
       FResizeCS.Acquire;
 
       if FResizing then
         FPendingResize := True
        else
-        if FPanel.BufferIsResized then
+        if FBrowserBitmap.BufferIsResized then
           FBrowser.Invalidate(PET_VIEW)
          else
           begin
@@ -709,6 +687,12 @@ begin
             p := Pos(':', domain);
             if p > 0 then
                SetLength(domain, p-1);
+            p := Pos(':', domain);
+            if p > 0 then
+               SetLength(domain, p-1);
+            p := Pos('@', domain);
+            if p > 0 then
+               domain := Copy(domain, p+1)
          end;
 
          var path := fields.Values['path'];
@@ -828,27 +812,27 @@ begin
 
   if FClosing or Terminated or not(Initialized) then exit;
 
-  if assigned(FBrowserInfoCS) and assigned(FPanel) and FPanel.BeginBufferDraw then
+  if assigned(FBrowserInfoCS) and assigned(FBrowserBitmap) and FBrowserBitmap.BeginBufferDraw then
     try
       FBrowserInfoCS.Acquire;
 
       case FParameters.OutputFormat of
          sofPDF, sofPrinter : begin
-            FBrowser.PDFPrintOptions.page_width := FParameters.PDFOptions.page_width;
-            FBrowser.PDFPrintOptions.page_height := FParameters.PDFOptions.page_height;
-            FBrowser.PDFPrintOptions.margin_type := FParameters.PDFOptions.margin_type;
-            FBrowser.PDFPrintOptions.margin_top := FParameters.PDFOptions.margin_top;
-            FBrowser.PDFPrintOptions.margin_left := FParameters.PDFOptions.margin_left;
-            FBrowser.PDFPrintOptions.margin_right := FParameters.PDFOptions.margin_right;
-            FBrowser.PDFPrintOptions.margin_bottom := FParameters.PDFOptions.margin_bottom;
+            FBrowser.PDFPrintOptions.PaperWidthInch := FParameters.PDFOptions.paper_width;
+            FBrowser.PDFPrintOptions.PaperHeightInch := FParameters.PDFOptions.paper_height;
+            FBrowser.PDFPrintOptions.MarginType := FParameters.PDFOptions.margin_type;
+            FBrowser.PDFPrintOptions.MarginTopInch := FParameters.PDFOptions.margin_top;
+            FBrowser.PDFPrintOptions.MarginLeftInch := FParameters.PDFOptions.margin_left;
+            FBrowser.PDFPrintOptions.MarginRightInch := FParameters.PDFOptions.margin_right;
+            FBrowser.PDFPrintOptions.MarginBottomInch := FParameters.PDFOptions.margin_bottom;
             if FParameters.Scale <> 1 then
-               FBrowser.PDFPrintOptions.scale_factor := Round(FParameters.Scale * 100);
-            FBrowser.PDFPrintOptions.landscape := FParameters.PDFOptions.landscape <> 0;
-            FBrowser.PDFPrintOptions.header_footer_enabled := (FParameters.PDFTitle <> '') or (FParameters.PDFURL <> '');
-            FBrowser.PDFPrintOptions.backgrounds_enabled := FParameters.PDFOptions.backgrounds_enabled <> 0;
+               FBrowser.PDFPrintOptions.Scale := FParameters.Scale;
+            FBrowser.PDFPrintOptions.Landscape := FParameters.PDFOptions.landscape <> 0;
+            FBrowser.PDFPrintOptions.DisplayHeaderFooter := (FParameters.PDFTitle <> '') or (FParameters.PDFURL <> '');
+            FBrowser.PDFPrintOptions.PrintBackground := FParameters.PDFOptions.print_background <> 0;
             if FParameters.Print then
                FBrowser.Print
-            else FBrowser.PrintToPDF(FParameters.OutputFilePath, FParameters.PDFTitle, FParameters.PDFURL);
+            else FBrowser.PrintToPDF(FParameters.OutputFilePath);//, FParameters.PDFTitle, FParameters.PDFURL);
          end;
          sofTXT : begin
             case FParameters.TextSource of
@@ -867,28 +851,28 @@ begin
             end;
          end;
       else
-         if assigned(FPanel.Buffer) and not(FPanel.Buffer.Empty) then
+         if assigned(FBrowserBitmap) and not(FBrowserBitmap.Empty) then
            begin
-             if (FSnapshot = nil) then
-               begin
-                 FSnapshot             := TBitmap.Create;
-                 FSnapshot.PixelFormat := pf32bit;
-                 FSnapshot.HandleType  := bmDIB;
-               end;
-
-             if (FSnapshot.Width <> FPanel.BufferWidth) then
-               FSnapshot.Width := FPanel.BufferWidth;
-
-             if (FSnapshot.Height <> FPanel.BufferHeight) then
-               FSnapshot.Height := FPanel.BufferHeight;
-
-             FSnapshot.Canvas.Draw(0, 0, FPanel.Buffer);
+//             if (FBrowserBitmap = nil) then
+//               begin
+//                 FSnapshot             := TBitmap.Create;
+//                 FSnapshot.PixelFormat := pf32bit;
+//                 FSnapshot.HandleType  := bmDIB;
+//               end;
+//
+//             if (FSnapshot.Width <> FBrowserBitmap.BufferWidth) then
+//               FSnapshot.Width := FBrowserBitmap.BufferWidth;
+//
+//             if (FSnapshot.Height <> FBrowserBitmap.BufferHeight) then
+//               FSnapshot.Height := FBrowserBitmap.BufferHeight;
+//
+//             FSnapshot.Canvas.Draw(0, 0, FBrowserBitmap.Buffer);
              Result := True;
            end;
       end;
     finally
       FBrowserInfoCS.Release;
-      FPanel.EndBufferDraw;
+      FBrowserBitmap.EndBufferDraw;
     end;
 end;
 
