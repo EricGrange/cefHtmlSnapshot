@@ -2,8 +2,6 @@
 
 Command-line utility for Windows whose aim is to take snapshots of HTML pages and save them as images or PDF
 
-Project is still experimental and not functional yet.
-
 Started as hack of the "ConsoleBrowser2" demo of CEF4Delphi by Salvador Díaz Fau, additional bugs are mine.
 
 Released under MPL 2.0
