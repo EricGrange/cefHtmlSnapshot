@@ -706,6 +706,9 @@ begin
          if domain = '' then begin
             var p := Pos('//', url);
             domain := Copy(url, p+2, Pos('/', url, p+2)-p-2);
+            p := Pos(':', domain);
+            if p > 0 then
+               SetLength(domain, p-1);
          end;
 
          var path := fields.Values['path'];
