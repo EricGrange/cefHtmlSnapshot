@@ -1,10 +1,13 @@
 ﻿(function () {
     let fn = function () {
         document.querySelectorAll(
-            '#cookie-consent-style-css, #ctcc-css, #eu-cookie-law, #cookieChoiceInfo'
+            '#cookie-consent-style-css, #ctcc-css, #eu-cookie-law, #cookieChoiceInfo, .fc-consent-root'
         ).forEach(e => e.remove());
     };
     setInterval(fn, 100);
     fn();
-    document.head.insertAdjacentHTML("beforeend", "<style>*{transition: none !important}</style>");
+	document.body.insertAdjacentHTML(
+		"afterend",
+		"<style>*{transition: none !important} div.fc-consent-root {display: none !important}</style>"
+	);
 })();
