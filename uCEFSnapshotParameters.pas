@@ -7,7 +7,7 @@ uses
    uCEFTypes, uCEFMiscFunctions;
 
 const
-   cChromiumSubFolder = 'Chromium112.0';
+   cChromiumSubFolder = 'Chromium129.0';
    cDLLSubfolder = 'Libraries';
 
 type
@@ -67,8 +67,8 @@ implementation
 uses LibTurboJPEG, Vcl.Imaging.pngimage, System.StrUtils, System.IOUtils;
 
 const
-   cHelp = 'cefHtmlSnaphot utility v0.8.104 - Html to image or pdf coversion using Chromium Embedded Framework'#10
-         + 'Using CEF 104.4.25, CEF4Delphi, TurboJPEG see https://github.com/EricGrange/cefHtmlSnapshot'#10#10
+   cHelp = 'cefHtmlSnaphot utility v0.8.129 - Html to image or pdf conversion using Chromium Embedded Framework'#10
+         + 'Using CEF 192.0.11, CEF4Delphi, TurboJPEG see https://github.com/EricGrange/cefHtmlSnapshot'#10#10
          + 'cefHtmlSnapshot.exe url_or_file [-arg1 value1] [-arg2 value2] ... output_file'#10
          + #10
          + '  -?, -h, --help    This inline documentation'#10

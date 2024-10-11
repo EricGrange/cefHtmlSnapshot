@@ -147,7 +147,6 @@ begin
    GlobalCEFApp.DeleteCache := True;
    GlobalCEFApp.DeleteCookies := True;
    GlobalCEFApp.PersistSessionCookies := False;
-   GlobalCEFApp.PersistUserPreferences := False;
    GlobalCEFApp.ReRaiseExceptions := False;
 
    Result := GlobalCEFApp.StartMainProcess;
